@@ -116,14 +116,31 @@
     gap: 15px;
   }
 
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .projects-container {
+    padding: 20px;
+  }
+
   .projects-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
   }
 
+  .btn-create-project {
+    width: 100%;
+  }
+
   .projects-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-main {
+    padding: 0 10px;
   }
 }
 
