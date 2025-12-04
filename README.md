@@ -52,7 +52,7 @@ PROJECTHUB/
 
 ### Pré-requisitos
 - Node.js (v14 ou superior)
-- MongoDB (local ou MongoDB Atlas)
+- MongoDB (local ou MongoDB Atlas) - **Veja [MONGODB_SETUP.md](backend/MONGODB_SETUP.md)** para configuração
 - npm ou yarn
 
 ### Backend
@@ -73,6 +73,8 @@ npm install
 cp env.example .env
 
 # Edite o arquivo .env com suas configurações
+# IMPORTANTE: Configure o MONGODB_URI
+# Veja backend/MONGODB_SETUP.md para instruções detalhadas
 ```
 
 4. Inicie o servidor:
@@ -205,4 +207,6 @@ Os projetos podem ser personalizados com:
 ## 📄 Licença
 
 Este projeto é open source e está disponível sob a licença MIT.
+
+Formind.tech @2025
 
