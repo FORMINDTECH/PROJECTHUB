@@ -19,17 +19,15 @@ module.exports = {
     },
     {
       name: 'frontend',
-      script: 'npm',
-      args: 'start',
+      script: 'npx',
+      args: 'serve -s build -l 3000',
       cwd: './frontend',
       instances: 1,
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
       env: {
-        NODE_ENV: 'production',
-        PORT: 3000,
-        REACT_APP_API_URL: process.env.REACT_APP_API_URL || 'http://localhost:5000'
+        NODE_ENV: 'production'
       },
       error_file: './logs/frontend-error.log',
       out_file: './logs/frontend-out.log',
