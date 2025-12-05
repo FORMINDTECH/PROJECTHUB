@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import SuccessModal from './SuccessModal';
+import ErrorModal from './ErrorModal';
+import ConfirmModal from './ConfirmModal';
 import './ProjectMembersModal.css';
 
 const ProjectMembersModal = ({ projectId, onClose, isOwner, projectOwner = null, projectCreatedAt = null }) => {
@@ -10,6 +12,8 @@ const ProjectMembersModal = ({ projectId, onClose, isOwner, projectOwner = null,
   const [memberEmail, setMemberEmail] = useState('');
   const [error, setError] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [errorModal, setErrorModal] = useState({ isOpen: false, message: '' });
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, memberId: null });
 
   useEffect(() => {
     loadMembers();
@@ -53,16 +57,21 @@ const ProjectMembersModal = ({ projectId, onClose, isOwner, projectOwner = null,
     }
   };
 
-  const handleRemoveMember = async (userId) => {
-    if (!window.confirm('Tem certeza que deseja remover este membro?')) {
-      return;
-    }
+  const handleRemoveMember = (userId) => {
+    setConfirmModal({ isOpen: true, memberId: userId });
+  };
+
+  const confirmRemoveMember = async () => {
+    if (!confirmModal.memberId) return;
 
     try {
-      await api.delete(`/projects/${projectId}/members/${userId}`);
-      setMembers(members.filter(m => m.id !== userId));
+      await api.delete(`/projects/${projectId}/members/${confirmModal.memberId}`);
+      setMembers(members.filter(m => m.id !== confirmModal.memberId));
+      setSuccessModal({ isOpen: true, message: 'Membro removido com sucesso!' });
     } catch (error) {
-      alert('Erro ao remover membro');
+      setErrorModal({ isOpen: true, message: 'Erro ao remover membro' });
+    } finally {
+      setConfirmModal({ isOpen: false, memberId: null });
     }
   };
 
@@ -160,6 +169,21 @@ const ProjectMembersModal = ({ projectId, onClose, isOwner, projectOwner = null,
         onClose={() => setShowSuccessModal(false)}
         title="Convite Enviado!"
         message="Convite enviado com sucesso! O usuário receberá uma notificação."
+      />
+
+      <ErrorModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ isOpen: false, message: '' })}
+        title="Erro"
+        message={errorModal.message}
+      />
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, memberId: null })}
+        onConfirm={confirmRemoveMember}
+        title="Remover Membro"
+        message="Tem certeza que deseja remover este membro?"
       />
     </div>
   );

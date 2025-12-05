@@ -8,6 +8,8 @@ import ProjectCard from '../components/ProjectCard';
 import ProjectModal from '../components/ProjectModal';
 import ProfileModal from '../components/ProfileModal';
 import InvitesModal from '../components/InvitesModal';
+import ConfirmModal from '../components/ConfirmModal';
+import ErrorModal from '../components/ErrorModal';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -17,6 +19,8 @@ const Dashboard = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showInvitesModal, setShowInvitesModal] = useState(false);
   const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, projectId: null });
+  const [errorModal, setErrorModal] = useState({ isOpen: false, message: '' });
   const { user, logout } = useContext(AuthContext);
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -60,16 +64,20 @@ const Dashboard = () => {
     }
   };
 
-  const handleDeleteProject = async (id) => {
-    if (!window.confirm('Tem certeza que deseja deletar este projeto?')) {
-      return;
-    }
+  const handleDeleteProject = (id) => {
+    setConfirmModal({ isOpen: true, projectId: id });
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!confirmModal.projectId) return;
 
     try {
-      await api.delete(`/projects/${id}`);
-      setProjects(projects.filter((p) => p.id !== id));
+      await api.delete(`/projects/${confirmModal.projectId}`);
+      setProjects(projects.filter((p) => p.id !== confirmModal.projectId));
     } catch (error) {
-      alert('Erro ao deletar projeto');
+      setErrorModal({ isOpen: true, message: 'Erro ao deletar projeto' });
+    } finally {
+      setConfirmModal({ isOpen: false, projectId: null });
     }
   };
 
@@ -169,20 +177,35 @@ const Dashboard = () => {
         />
       )}
 
-      <InvitesModal
-        isOpen={showInvitesModal}
-        onClose={() => {
-          setShowInvitesModal(false);
-          loadInvitesCount();
-        }}
-        onUpdate={() => {
-          loadProjects();
-          loadInvitesCount();
-        }}
-      />
-    </div>
-  );
-};
+        <InvitesModal
+          isOpen={showInvitesModal}
+          onClose={() => {
+            setShowInvitesModal(false);
+            loadInvitesCount();
+          }}
+          onUpdate={() => {
+            loadProjects();
+            loadInvitesCount();
+          }}
+        />
 
-export default Dashboard;
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          onClose={() => setConfirmModal({ isOpen: false, projectId: null })}
+          onConfirm={confirmDeleteProject}
+          title="Deletar Projeto"
+          message="Tem certeza que deseja deletar este projeto? Esta ação não pode ser desfeita."
+        />
+
+        <ErrorModal
+          isOpen={errorModal.isOpen}
+          onClose={() => setErrorModal({ isOpen: false, message: '' })}
+          title="Erro"
+          message={errorModal.message}
+        />
+      </div>
+    );
+  };
+
+  export default Dashboard;
 

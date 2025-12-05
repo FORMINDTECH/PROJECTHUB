@@ -24,6 +24,7 @@ import ProjectMembersModal from '../components/ProjectMembersModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AssignMemberModal from '../components/AssignMemberModal';
 import EditProjectModal from '../components/EditProjectModal';
+import ErrorModal from '../components/ErrorModal';
 import { useTheme } from '../context/ThemeContext';
 import { AuthContext } from '../context/AuthContext';
 import './ProjectBoard.css';
@@ -281,6 +282,7 @@ const ProjectBoard = () => {
   const [draftData, setDraftData] = useState({ title: '', description: '' });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, taskId: null });
   const [assignModal, setAssignModal] = useState({ isOpen: false, task: null });
+  const [errorModal, setErrorModal] = useState({ isOpen: false, message: '' });
 
   const { theme, toggleTheme } = useTheme();
   const { user } = useContext(AuthContext);
@@ -391,7 +393,7 @@ const ProjectBoard = () => {
             setTaskCreated(prev => prev + 1); // Trigger para limpar o formulário
           } catch (error) {
             console.error('Erro ao criar tarefa:', error);
-            alert(error.response?.data?.message || 'Erro ao criar tarefa');
+            setErrorModal({ isOpen: true, message: error.response?.data?.message || 'Erro ao criar tarefa' });
           }
         }
       }
@@ -416,7 +418,7 @@ const ProjectBoard = () => {
       // Soltou em uma coluna
       const newStatus = targetColumn.status;
       const sourceStatus = activeTask.status || activeTask._status || null;
-      
+
       // Se é um post-it (sem status) ou está mudando de coluna
       if (sourceStatus === null || newStatus !== sourceStatus) {
         // Mover para outra coluna
@@ -501,28 +503,28 @@ const ProjectBoard = () => {
         });
 
         const newColumnTasks = arrayMove(activeColumnTasks, oldIndex, overIndex);
-        
-        const updatedTasks = [
+
+    const updatedTasks = [
           ...tasks.filter(t => {
             const tStatus = t.status || t._status;
             return tStatus !== activeTaskStatus;
           }),
           ...newColumnTasks.map((t, i) => ({ ...t, order: i })),
-        ];
+    ];
 
-        setTasks(updatedTasks);
+    setTasks(updatedTasks);
 
-        // Atualizar no backend
-        try {
+    // Atualizar no backend
+    try {
           await api.put(`/tasks/${activeTask.id || activeTask._id}/move`, {
             status: activeTaskStatus,
             order: overIndex,
-          });
+      });
           setTimeout(() => {
             loadTasks();
           }, 100);
-        } catch (error) {
-          console.error('Erro ao mover tarefa:', error);
+    } catch (error) {
+      console.error('Erro ao mover tarefa:', error);
           await loadTasks();
         }
       }
@@ -561,14 +563,14 @@ const ProjectBoard = () => {
   const confirmDeleteTask = async () => {
     if (!confirmModal.taskId) return;
 
-    try {
-      await api.delete(`/tasks/${confirmModal.taskId}`);
-      await loadTasks();
-    } catch (error) {
-      alert('Erro ao deletar tarefa');
-    } finally {
-      setConfirmModal({ isOpen: false, taskId: null });
-    }
+      try {
+        await api.delete(`/tasks/${confirmModal.taskId}`);
+        await loadTasks();
+      } catch (error) {
+        setErrorModal({ isOpen: true, message: 'Erro ao deletar tarefa' });
+      } finally {
+        setConfirmModal({ isOpen: false, taskId: null });
+      }
   };
 
   const handleEditTask = (task) => {
@@ -665,16 +667,16 @@ const ProjectBoard = () => {
                   ✏️ Editar Projeto
                 </button>
               )}
-              <button 
+          <button
                 onClick={() => setShowMembersModal(true)} 
                 className="btn btn-secondary btn-sm"
                 title="Membros do Projeto"
-              >
+          >
                 👥 Membros
               </button>
               <button onClick={toggleTheme} className="btn btn-secondary btn-icon" title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}>
                 {theme === 'dark' ? '☀️' : '🌙'}
-              </button>
+          </button>
             </div>
         </div>
       </header>
@@ -717,10 +719,10 @@ const ProjectBoard = () => {
             )}
           </div>
 
-          <div className="board-columns">
-            {columns.map((column) => {
-              const columnTasks = getTasksByStatus(column.status);
-              return (
+        <div className="board-columns">
+          {columns.map((column) => {
+            const columnTasks = getTasksByStatus(column.status);
+            return (
                 <Column
                   key={column.id}
                   column={column}
@@ -731,11 +733,11 @@ const ProjectBoard = () => {
               );
             })}
           </div>
-        </div>
+                </div>
         <DragOverlay 
           dropAnimation={null}
           style={{ cursor: 'grabbing' }}
-        >
+                    >
           {isDraggingDraft && draftData.title ? (
             <div className="postit-form-card dragging-overlay">
               <div className="postit-form-header">
@@ -752,7 +754,7 @@ const ProjectBoard = () => {
                       fontFamily: "'Segoe UI', 'Comic Sans MS', 'Kalam', cursive, sans-serif"
                     }}>
                       {draftData.title}
-                    </div>
+                              </div>
                     {draftData.description && (
                       <>
                         <div className="postit-line"></div>
@@ -764,10 +766,10 @@ const ProjectBoard = () => {
                           whiteSpace: 'pre-wrap'
                         }}>
                           {draftData.description}
-                        </div>
+                                </div>
                       </>
-                    )}
-                  </div>
+                              )}
+                            </div>
                 </div>
               </div>
             </div>
@@ -775,11 +777,11 @@ const ProjectBoard = () => {
             <div className="task-card task-card-dragging" style={{ opacity: 0.9 }}>
               <div className="task-header">
                 <h3>{activeTask.title}</h3>
-              </div>
+                        </div>
               {activeTask.description && (
                 <p className="task-description">{activeTask.description}</p>
-              )}
-            </div>
+                      )}
+                    </div>
           ) : null}
         </DragOverlay>
       </DndContext>
@@ -808,13 +810,20 @@ const ProjectBoard = () => {
         task={assignModal.task}
         projectId={id}
         onAssign={handleAssignMember}
-      />
+        />
 
       <EditProjectModal
         isOpen={showEditProjectModal}
         onClose={() => setShowEditProjectModal(false)}
         project={project}
         onUpdate={loadProject}
+      />
+
+      <ErrorModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ isOpen: false, message: '' })}
+        title="Erro"
+        message={errorModal.message}
       />
     </div>
   );

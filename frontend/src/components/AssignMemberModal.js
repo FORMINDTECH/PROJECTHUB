@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
+import ErrorModal from './ErrorModal';
 import './AssignMemberModal.css';
 
 const AssignMemberModal = ({ isOpen, onClose, task, projectId, onAssign }) => {
@@ -8,6 +9,7 @@ const AssignMemberModal = ({ isOpen, onClose, task, projectId, onAssign }) => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
+  const [errorModal, setErrorModal] = useState({ isOpen: false, message: '' });
 
   useEffect(() => {
     if (isOpen && projectId) {
@@ -43,7 +45,7 @@ const AssignMemberModal = ({ isOpen, onClose, task, projectId, onAssign }) => {
       }
     } catch (error) {
       console.error('Erro ao carregar membros:', error);
-      alert('Erro ao carregar membros do projeto');
+      setErrorModal({ isOpen: true, message: 'Erro ao carregar membros do projeto' });
     } finally {
       setLoading(false);
     }
@@ -56,12 +58,12 @@ const AssignMemberModal = ({ isOpen, onClose, task, projectId, onAssign }) => {
       await api.put(`/tasks/${task.id}`, {
         assignedTo: selectedMember || null,
       });
-      onAssign();
-      onClose();
-    } catch (error) {
-      console.error('Erro ao associar membro:', error);
-      alert('Erro ao associar membro à tarefa');
-    }
+        onAssign();
+        onClose();
+      } catch (error) {
+        console.error('Erro ao associar membro:', error);
+        setErrorModal({ isOpen: true, message: 'Erro ao associar membro à tarefa' });
+      }
   };
 
   if (!isOpen) return null;
@@ -146,6 +148,13 @@ const AssignMemberModal = ({ isOpen, onClose, task, projectId, onAssign }) => {
             Salvar
           </button>
         </div>
+
+        <ErrorModal
+          isOpen={errorModal.isOpen}
+          onClose={() => setErrorModal({ isOpen: false, message: '' })}
+          title="Erro"
+          message={errorModal.message}
+        />
       </div>
     </div>
   );

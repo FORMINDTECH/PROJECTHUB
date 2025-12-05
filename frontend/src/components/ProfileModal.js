@@ -1,6 +1,9 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
+import SuccessModal from './SuccessModal';
+import ErrorModal from './ErrorModal';
+import ConfirmModal from './ConfirmModal';
 import './ProfileModal.css';
 
 const ProfileModal = ({ onClose }) => {
@@ -15,6 +18,9 @@ const ProfileModal = ({ onClose }) => {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingAvatar, setLoadingAvatar] = useState(false);
   const [errorProfile, setErrorProfile] = useState('');
+  const [successModal, setSuccessModal] = useState({ isOpen: false, message: '' });
+  const [errorModal, setErrorModal] = useState({ isOpen: false, message: '' });
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, onConfirm: null });
 
   // Atualizar preview do avatar quando o usuário mudar
   useEffect(() => {
@@ -50,46 +56,24 @@ const ProfileModal = ({ onClose }) => {
     }
   };
 
-  const handleAvatarUpload = async () => {
-    if (!avatarFile) return;
-
-    setLoadingAvatar(true);
-    try {
-      const formData = new FormData();
-      formData.append('avatar', avatarFile);
-
-      const response = await api.post('/auth/avatar', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      setUser(response.data.user);
-      setAvatarFile(null);
-      alert('Foto de perfil atualizada com sucesso!');
-    } catch (error) {
-      alert(error.response?.data?.message || 'Erro ao fazer upload da foto');
-    } finally {
-      setLoadingAvatar(false);
-    }
-  };
-
-  const handleRemoveAvatar = async () => {
-    if (!window.confirm('Tem certeza que deseja remover sua foto de perfil?')) {
-      return;
-    }
-
-    setLoadingAvatar(true);
-    try {
-      const response = await api.delete('/auth/avatar');
-      setUser(response.data.user);
-      setAvatarPreview(null);
-      setAvatarFile(null);
-      alert('Foto de perfil removida com sucesso!');
-    } catch (error) {
-      alert(error.response?.data?.message || 'Erro ao remover foto');
-    } finally {
-      setLoadingAvatar(false);
-    }
+  const handleRemoveAvatar = () => {
+    setConfirmModal({
+      isOpen: true,
+      onConfirm: async () => {
+        setLoadingAvatar(true);
+        try {
+          const response = await api.delete('/auth/avatar');
+          setUser(response.data.user);
+          setAvatarPreview(null);
+          setAvatarFile(null);
+          setSuccessModal({ isOpen: true, message: 'Foto de perfil removida com sucesso!' });
+        } catch (error) {
+          setErrorModal({ isOpen: true, message: error.response?.data?.message || 'Erro ao remover foto' });
+        } finally {
+          setLoadingAvatar(false);
+        }
+      }
+    });
   };
 
   const handleUpdateProfile = async (e) => {
@@ -98,11 +82,26 @@ const ProfileModal = ({ onClose }) => {
     setLoadingProfile(true);
 
     try {
+      // Se houver avatarFile, fazer upload primeiro
+      if (avatarFile) {
+        const formData = new FormData();
+        formData.append('avatar', avatarFile);
+        const avatarResponse = await api.post('/auth/avatar', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        setUser(avatarResponse.data.user);
+        setAvatarFile(null);
+      }
+
+      // Atualizar perfil
       const response = await api.put('/auth/profile', { name, nickname: nickname || null });
       setUser(response.data.user);
-      alert('Perfil atualizado com sucesso!');
+      setSuccessModal({ isOpen: true, message: 'Perfil atualizado com sucesso!' });
     } catch (error) {
       setErrorProfile(error.response?.data?.message || 'Erro ao atualizar perfil');
+      setErrorModal({ isOpen: true, message: error.response?.data?.message || 'Erro ao atualizar perfil' });
     } finally {
       setLoadingProfile(false);
     }
@@ -120,7 +119,7 @@ const ProfileModal = ({ onClose }) => {
       });
       setUser(response.data.user);
       setPasswordForEmail('');
-      alert('Email alterado com sucesso!');
+      setSuccessModal({ isOpen: true, message: 'Email alterado com sucesso!' });
     } catch (error) {
       setErrorEmail(error.response?.data?.message || 'Erro ao alterar email');
     } finally {
@@ -147,7 +146,7 @@ const ProfileModal = ({ onClose }) => {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      alert('Senha alterada com sucesso!');
+      setSuccessModal({ isOpen: true, message: 'Senha alterada com sucesso!' });
     } catch (error) {
       setErrorPassword(error.response?.data?.message || 'Erro ao alterar senha');
     } finally {
@@ -212,16 +211,6 @@ const ProfileModal = ({ onClose }) => {
                       onChange={handleAvatarChange}
                       style={{ display: 'none' }}
                     />
-                    {avatarFile && (
-                      <button
-                        type="button"
-                        onClick={handleAvatarUpload}
-                        disabled={loadingAvatar}
-                        className="btn btn-primary btn-sm"
-                      >
-                        {loadingAvatar ? 'Enviando...' : 'Salvar Foto'}
-                      </button>
-                    )}
                     {avatarPreview && (
                       <button
                         type="button"
@@ -364,6 +353,33 @@ const ProfileModal = ({ onClose }) => {
             </form>
           )}
         </div>
+
+        <SuccessModal
+          isOpen={successModal.isOpen}
+          onClose={() => setSuccessModal({ isOpen: false, message: '' })}
+          title="Sucesso!"
+          message={successModal.message}
+        />
+
+        <ErrorModal
+          isOpen={errorModal.isOpen}
+          onClose={() => setErrorModal({ isOpen: false, message: '' })}
+          title="Erro"
+          message={errorModal.message}
+        />
+
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          onClose={() => setConfirmModal({ isOpen: false, onConfirm: null })}
+          onConfirm={() => {
+            if (confirmModal.onConfirm) {
+              confirmModal.onConfirm();
+            }
+            setConfirmModal({ isOpen: false, onConfirm: null });
+          }}
+          title="Confirmar Remoção"
+          message="Tem certeza que deseja remover sua foto de perfil?"
+        />
       </div>
     </div>
   );
