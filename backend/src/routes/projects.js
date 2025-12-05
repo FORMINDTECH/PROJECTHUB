@@ -1,42 +1,86 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const { Project, Task } = require('../models');
+const { Project, Task, ProjectMember, User } = require('../models');
 const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const { Op } = require('sequelize');
 
 // @route   GET /api/projects
-// @desc    Listar projetos do usuário
+// @desc    Listar projetos do usuário (como owner ou member)
 // @access  Private
 router.get('/', auth, async (req, res) => {
   try {
-    const projects = await Project.findAll({
+    // Buscar projetos onde o usuário é owner ou member
+    const ownedProjects = await Project.findAll({
       where: { ownerId: req.user.id },
       order: [['createdAt', 'DESC']]
     });
-    res.json(projects);
+
+    const memberProjects = await Project.findAll({
+      include: [{
+        model: ProjectMember,
+        as: 'projectMembers',
+        where: { userId: req.user.id },
+        required: true
+      }],
+      order: [['createdAt', 'DESC']]
+    });
+
+    // Combinar e remover duplicatas
+    const allProjects = [...ownedProjects];
+    memberProjects.forEach(mp => {
+      if (!allProjects.find(p => p.id === mp.id)) {
+        allProjects.push(mp);
+      }
+    });
+
+    res.json(allProjects);
   } catch (error) {
     console.error('Erro ao listar projetos:', error);
     res.status(500).json({ message: 'Erro ao listar projetos' });
   }
 });
 
+// Helper function para verificar se usuário tem acesso ao projeto
+const hasProjectAccess = async (projectId, userId) => {
+  const project = await Project.findByPk(projectId, {
+    include: [{
+      model: ProjectMember,
+      as: 'projectMembers',
+      where: { userId },
+      required: false
+    }]
+  });
+
+  if (!project) return false;
+  if (project.ownerId === userId) return true;
+  if (project.projectMembers && project.projectMembers.length > 0) return true;
+  return false;
+};
+
 // @route   GET /api/projects/:id
 // @desc    Obter projeto específico
 // @access  Private
 router.get('/:id', auth, async (req, res) => {
   try {
-    const project = await Project.findOne({
-      where: {
-        id: req.params.id,
-        ownerId: req.user.id,
-      }
-    });
-
-    if (!project) {
+    const hasAccess = await hasProjectAccess(req.params.id, req.user.id);
+    if (!hasAccess) {
       return res.status(404).json({ message: 'Projeto não encontrado' });
     }
+
+    const project = await Project.findByPk(req.params.id, {
+      include: [{
+        model: User,
+        as: 'members',
+        attributes: ['id', 'name', 'email', 'nickname'],
+        through: { attributes: [] }
+      }, {
+        model: User,
+        as: 'owner',
+        attributes: ['id', 'name', 'email', 'nickname']
+      }]
+    });
 
     res.json(project);
   } catch (error) {
@@ -67,6 +111,21 @@ router.post('/', [
       ownerId: req.user.id,
     });
 
+    // Adicionar o owner como membro também
+    await ProjectMember.create({
+      projectId: project.id,
+      userId: req.user.id
+    });
+
+    await project.reload({
+      include: [{
+        model: User,
+        as: 'members',
+        attributes: ['id', 'name', 'email', 'nickname'],
+        through: { attributes: [] }
+      }]
+    });
+
     res.status(201).json(project);
   } catch (error) {
     console.error('Erro ao criar projeto:', error);
@@ -87,15 +146,14 @@ router.put('/:id', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const project = await Project.findOne({
-      where: {
-        id: req.params.id,
-        ownerId: req.user.id,
-      }
-    });
-
+    const project = await Project.findByPk(req.params.id);
     if (!project) {
       return res.status(404).json({ message: 'Projeto não encontrado' });
+    }
+
+    // Apenas o owner pode atualizar
+    if (project.ownerId !== req.user.id) {
+      return res.status(403).json({ message: 'Apenas o dono do projeto pode atualizá-lo' });
     }
 
     const { name, description, color } = req.body;
@@ -116,15 +174,14 @@ router.put('/:id', [
 // @access  Private
 router.post('/:id/logo', auth, upload.single('logo'), async (req, res) => {
   try {
-    const project = await Project.findOne({
-      where: {
-        id: req.params.id,
-        ownerId: req.user.id,
-      }
-    });
-
+    const project = await Project.findByPk(req.params.id);
     if (!project) {
       return res.status(404).json({ message: 'Projeto não encontrado' });
+    }
+
+    // Apenas o owner pode fazer upload
+    if (project.ownerId !== req.user.id) {
+      return res.status(403).json({ message: 'Apenas o dono do projeto pode fazer upload' });
     }
 
     if (!req.file) {
@@ -146,19 +203,21 @@ router.post('/:id/logo', auth, upload.single('logo'), async (req, res) => {
 // @access  Private
 router.delete('/:id', auth, async (req, res) => {
   try {
-    const project = await Project.findOne({
-      where: {
-        id: req.params.id,
-        ownerId: req.user.id,
-      }
-    });
-
+    const project = await Project.findByPk(req.params.id);
     if (!project) {
       return res.status(404).json({ message: 'Projeto não encontrado' });
     }
 
+    // Apenas o owner pode deletar
+    if (project.ownerId !== req.user.id) {
+      return res.status(403).json({ message: 'Apenas o dono do projeto pode deletá-lo' });
+    }
+
     // Deletar todas as tarefas do projeto
     await Task.destroy({ where: { projectId: project.id } });
+
+    // Deletar todos os membros
+    await ProjectMember.destroy({ where: { projectId: project.id } });
 
     // Deletar projeto
     await project.destroy();
@@ -167,6 +226,121 @@ router.delete('/:id', auth, async (req, res) => {
   } catch (error) {
     console.error('Erro ao deletar projeto:', error);
     res.status(500).json({ message: 'Erro ao deletar projeto' });
+  }
+});
+
+// @route   POST /api/projects/:id/members
+// @desc    Adicionar membro ao projeto
+// @access  Private (apenas owner)
+router.post('/:id/members', [
+  auth,
+  body('email').isEmail().withMessage('Email inválido'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const project = await Project.findByPk(req.params.id);
+    if (!project) {
+      return res.status(404).json({ message: 'Projeto não encontrado' });
+    }
+
+    // Apenas o owner pode adicionar membros
+    if (project.ownerId !== req.user.id) {
+      return res.status(403).json({ message: 'Apenas o dono do projeto pode adicionar membros' });
+    }
+
+    // Buscar usuário por email
+    const user = await User.findOne({ where: { email: req.body.email.toLowerCase() } });
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+
+    // Não pode adicionar o próprio owner
+    if (user.id === project.ownerId) {
+      return res.status(400).json({ message: 'O dono do projeto já é membro' });
+    }
+
+    // Verificar se já é membro
+    const existingMember = await ProjectMember.findOne({
+      where: { projectId: project.id, userId: user.id }
+    });
+    if (existingMember) {
+      return res.status(400).json({ message: 'Usuário já é membro do projeto' });
+    }
+
+    await ProjectMember.create({
+      projectId: project.id,
+      userId: user.id
+    });
+
+    const member = await User.findByPk(user.id, {
+      attributes: ['id', 'name', 'email', 'nickname']
+    });
+
+    res.status(201).json(member);
+  } catch (error) {
+    console.error('Erro ao adicionar membro:', error);
+    res.status(500).json({ message: 'Erro ao adicionar membro' });
+  }
+});
+
+// @route   DELETE /api/projects/:id/members/:userId
+// @desc    Remover membro do projeto
+// @access  Private (apenas owner)
+router.delete('/:id/members/:userId', auth, async (req, res) => {
+  try {
+    const project = await Project.findByPk(req.params.id);
+    if (!project) {
+      return res.status(404).json({ message: 'Projeto não encontrado' });
+    }
+
+    // Apenas o owner pode remover membros
+    if (project.ownerId !== req.user.id) {
+      return res.status(403).json({ message: 'Apenas o dono do projeto pode remover membros' });
+    }
+
+    const member = await ProjectMember.findOne({
+      where: { projectId: project.id, userId: req.params.userId }
+    });
+
+    if (!member) {
+      return res.status(404).json({ message: 'Membro não encontrado' });
+    }
+
+    await member.destroy();
+    res.json({ message: 'Membro removido com sucesso' });
+  } catch (error) {
+    console.error('Erro ao remover membro:', error);
+    res.status(500).json({ message: 'Erro ao remover membro' });
+  }
+});
+
+// @route   GET /api/projects/:id/members
+// @desc    Listar membros do projeto
+// @access  Private
+router.get('/:id/members', auth, async (req, res) => {
+  try {
+    const hasAccess = await hasProjectAccess(req.params.id, req.user.id);
+    if (!hasAccess) {
+      return res.status(404).json({ message: 'Projeto não encontrado' });
+    }
+
+    const members = await ProjectMember.findAll({
+      where: { projectId: req.params.id },
+      include: [{
+        model: User,
+        as: 'user',
+        attributes: ['id', 'name', 'email', 'nickname']
+      }]
+    });
+
+    res.json(members.map(m => m.user));
+  } catch (error) {
+    console.error('Erro ao listar membros:', error);
+    res.status(500).json({ message: 'Erro ao listar membros' });
   }
 });
 

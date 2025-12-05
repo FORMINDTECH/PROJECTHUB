@@ -1,17 +1,46 @@
+/* Variáveis CSS para temas */
+:root[data-theme="dark"] {
+  --bg-card: #0f172a;
+  --border-color: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --shadow: rgba(0, 0, 0, 0.3);
+  --shadow-hover: rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme="light"] {
+  --bg-card: #ffffff;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --shadow: rgba(0, 0, 0, 0.1);
+  --shadow-hover: rgba(0, 0, 0, 0.15);
+}
+
 .project-card {
-  background: white;
+  background: var(--bg-card) !important;
   border-radius: 8px;
   border-top: 4px solid #6366f1;
   padding: 20px;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px var(--shadow);
   position: relative;
+  border: 1px solid var(--border-color);
+}
+
+/* Garantir que o background seja aplicado mesmo com outros estilos */
+[data-theme="dark"] .project-card {
+  background: #0f172a !important;
+}
+
+[data-theme="light"] .project-card {
+  background: #ffffff !important;
 }
 
 .project-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px var(--shadow-hover);
 }
 
 .project-card-header {
@@ -26,43 +55,35 @@
   height: 50px;
   object-fit: cover;
   border-radius: 8px;
+  border: 1px solid var(--border-color);
 }
 
-.btn-delete {
-  background: #f44336;
-  color: white;
-  border: none;
-  border-radius: 50%;
+/* Botão de deletar usa classes padronizadas do buttons.css */
+.project-card .btn-icon {
+  opacity: 0;
   width: 28px;
   height: 28px;
   font-size: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-  opacity: 0;
 }
 
-.project-card:hover .btn-delete {
+.project-card:hover .btn-icon {
   opacity: 1;
 }
 
-.btn-delete:hover {
-  background: #d32f2f;
-}
-
 .project-name {
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.2rem;
   margin-bottom: 8px;
+  font-weight: 600;
+  transition: color 0.3s ease;
 }
 
 .project-description {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   margin-bottom: 15px;
   line-height: 1.4;
+  transition: color 0.3s ease;
 }
 
 .project-footer {
@@ -78,4 +99,3 @@
   color: white;
   font-weight: 500;
 }
-

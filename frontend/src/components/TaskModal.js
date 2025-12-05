@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './TaskModal.css';
 
-const TaskModal = ({ onClose, onSave, task = null }) => {
+const TaskModal = ({ onClose, onSave, task = null, initialStatus = null, members = [] }) => {
   const [title, setTitle] = useState(task?.title || '');
   const [description, setDescription] = useState(task?.description || '');
-  const [status, setStatus] = useState(task?.status || 'todo');
+  const [status, setStatus] = useState(initialStatus || task?.status || 'todo');
+  const [assignedTo, setAssignedTo] = useState(task?.assignedToId || task?.assignedTo?.id || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -13,8 +14,11 @@ const TaskModal = ({ onClose, onSave, task = null }) => {
       setTitle(task.title);
       setDescription(task.description || '');
       setStatus(task.status);
+      setAssignedTo(task.assignedToId || task.assignedTo?.id || '');
+    } else if (initialStatus) {
+      setStatus(initialStatus);
     }
-  }, [task]);
+  }, [task, initialStatus]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,8 +27,8 @@ const TaskModal = ({ onClose, onSave, task = null }) => {
 
     try {
       const result = task
-        ? await onSave(task._id, { title, description, status })
-        : await onSave({ title, description, status });
+        ? await onSave(task._id || task.id, { title, description, status, assignedTo: assignedTo || null })
+        : await onSave({ title, description, status, assignedTo: assignedTo || null });
       if (!result.success) {
         setError(result.error || 'Erro ao salvar tarefa');
       }
@@ -40,7 +44,7 @@ const TaskModal = ({ onClose, onSave, task = null }) => {
       <div className="modal-content task-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{task ? 'Editar Tarefa' : 'Nova Tarefa'}</h2>
-          <button className="btn-close" onClick={onClose}>×</button>
+          <button className="btn btn-ghost btn-icon" onClick={onClose} title="Fechar">×</button>
         </div>
 
         {error && <div className="error-message">{error}</div>}
@@ -83,18 +87,37 @@ const TaskModal = ({ onClose, onSave, task = null }) => {
             </select>
           </div>
 
+          {members.length > 0 && (
+            <div className="form-group">
+              <label htmlFor="assignedTo">Atribuir a</label>
+              <select
+                id="assignedTo"
+                value={assignedTo}
+                onChange={(e) => setAssignedTo(e.target.value)}
+                className="status-select"
+              >
+                <option value="">Ninguém</option>
+                {members.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.nickname || member.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="modal-actions">
             <button
               type="button"
               onClick={onClose}
-              className="btn-cancel"
+              className="btn btn-secondary"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="btn-save"
+              className="btn btn-primary"
             >
               {loading ? 'Salvando...' : 'Salvar'}
             </button>

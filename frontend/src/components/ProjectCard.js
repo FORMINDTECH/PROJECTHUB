@@ -1,17 +1,25 @@
 import React from 'react';
+import { useTheme } from '../context/ThemeContext';
 import './ProjectCard.css';
 
 const ProjectCard = ({ project, onClick, onDelete }) => {
+  const { theme } = useTheme();
   const handleDelete = (e) => {
     e.stopPropagation();
     onDelete(project.id);
+  };
+
+  const cardStyle = {
+    borderTopColor: project.color,
+    backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
+    color: theme === 'dark' ? '#f1f5f9' : '#0f172a',
   };
 
   return (
     <div
       className="project-card"
       onClick={onClick}
-      style={{ borderTopColor: project.color }}
+      style={cardStyle}
     >
       <div className="project-card-header">
         {project.logo && (
@@ -22,7 +30,7 @@ const ProjectCard = ({ project, onClick, onDelete }) => {
           />
         )}
         <button
-          className="btn-delete"
+          className="btn btn-danger btn-icon"
           onClick={handleDelete}
           title="Deletar projeto"
         >

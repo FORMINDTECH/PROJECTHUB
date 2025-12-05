@@ -1,3 +1,22 @@
+/* Variáveis CSS para temas */
+:root[data-theme="dark"] {
+  --bg-modal: #1e293b;
+  --bg-input: #0f172a;
+  --border-color: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --shadow: rgba(0, 0, 0, 0.3);
+}
+
+:root[data-theme="light"] {
+  --bg-modal: #ffffff;
+  --bg-input: #ffffff;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --shadow: rgba(0, 0, 0, 0.1);
+}
+
 .task-modal {
   max-width: 500px;
 }
@@ -5,17 +24,18 @@
 .status-select {
   width: 100%;
   padding: 12px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-color);
   border-radius: 8px;
   font-size: 1rem;
   font-family: inherit;
-  background: white;
+  background: var(--bg-input);
+  color: var(--text-primary);
   cursor: pointer;
-  transition: border-color 0.3s;
+  transition: all 0.3s;
 }
 
 .status-select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
-

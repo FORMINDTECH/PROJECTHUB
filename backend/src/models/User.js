@@ -39,6 +39,11 @@ const User = sequelize.define('User', {
         msg: 'Senha deve ter no mínimo 6 caracteres'
       }
     }
+  },
+  nickname: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: null
   }
 }, {
   tableName: 'users',

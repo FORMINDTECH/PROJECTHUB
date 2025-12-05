@@ -1,0 +1,196 @@
+/* Variáveis CSS para temas */
+:root[data-theme="dark"] {
+  --bg-form: #1e293b;
+  --bg-form-expanded: rgba(15, 23, 42, 0.5);
+  --bg-input: #0f172a;
+  --border-color: #334155;
+  --border-hover: #475569;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+  --shadow: rgba(0, 0, 0, 0.3);
+  --accent-blue: #3b82f6;
+  --accent-blue-hover: #2563eb;
+}
+
+:root[data-theme="light"] {
+  --bg-form: #ffffff;
+  --bg-form-expanded: #f8fafc;
+  --bg-input: #ffffff;
+  --border-color: #e2e8f0;
+  --border-hover: #cbd5e1;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #64748b;
+  --shadow: rgba(0, 0, 0, 0.1);
+  --accent-blue: #3b82f6;
+  --accent-blue-hover: #2563eb;
+}
+
+.quick-task-form {
+  background: var(--bg-form);
+  border-radius: 12px;
+  padding: 0;
+  box-shadow: 0 4px 6px var(--shadow);
+  margin-bottom: 20px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.quick-task-header {
+  padding: 18px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s;
+  user-select: none;
+  background: transparent;
+}
+
+.quick-task-header:hover {
+  background-color: var(--bg-form-expanded);
+}
+
+.quick-task-header.expanded {
+  background-color: var(--bg-form-expanded);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.quick-task-icon {
+  font-size: 24px;
+  filter: grayscale(0.2);
+}
+
+.quick-task-title {
+  flex: 1;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.quick-task-arrow {
+  color: var(--text-secondary);
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.quick-task-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--bg-form-expanded);
+}
+
+.quick-task-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quick-task-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 5px;
+}
+
+.quick-task-input,
+.quick-task-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: all 0.2s;
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.quick-task-input::placeholder,
+.quick-task-textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+.quick-task-input:focus,
+.quick-task-textarea:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.quick-task-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.quick-task-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quick-task-column-btn {
+  padding: 12px 16px;
+  border: 2px solid;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-task-column-btn::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: currentColor;
+  transform: scaleY(0);
+  transition: transform 0.2s;
+}
+
+.quick-task-column-btn:hover {
+  transform: translateX(5px);
+  box-shadow: 0 2px 8px var(--shadow);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.quick-task-column-btn.active {
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px var(--shadow);
+}
+
+.quick-task-column-btn.active::before {
+  transform: scaleY(1);
+}
+
+.quick-task-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* Botões usam classes padronizadas do buttons.css */
+.quick-task-actions .btn {
+  flex: 1;
+}
+
+.quick-task-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  background: var(--accent-blue-hover);
+}
+
+.quick-task-submit:active {
+  transform: translateY(0);
+}

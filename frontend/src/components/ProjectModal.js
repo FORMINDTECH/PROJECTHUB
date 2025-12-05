@@ -37,7 +37,7 @@ const ProjectModal = ({ onClose, onSave, project = null }) => {
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{project ? 'Editar Projeto' : 'Novo Projeto'}</h2>
-          <button className="btn-close" onClick={onClose}>×</button>
+          <button className="btn btn-ghost btn-icon" onClick={onClose} title="Fechar">×</button>
         </div>
 
         {error && <div className="error-message">{error}</div>}
@@ -91,14 +91,14 @@ const ProjectModal = ({ onClose, onSave, project = null }) => {
             <button
               type="button"
               onClick={onClose}
-              className="btn-cancel"
+              className="btn btn-secondary"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="btn-save"
+              className="btn btn-primary"
             >
               {loading ? 'Salvando...' : 'Salvar'}
             </button>

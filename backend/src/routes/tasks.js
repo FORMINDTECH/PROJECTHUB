@@ -1,24 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const { Task, Project, User } = require('../models');
+const { Task, Project, User, ProjectMember } = require('../models');
 const auth = require('../middleware/auth');
 const { Op } = require('sequelize');
+
+// Helper function para verificar se usuário tem acesso ao projeto
+const hasProjectAccess = async (projectId, userId) => {
+  const project = await Project.findByPk(projectId, {
+    include: [{
+      model: ProjectMember,
+      as: 'projectMembers',
+      where: { userId },
+      required: false
+    }]
+  });
+
+  if (!project) return false;
+  if (project.ownerId === userId) return true;
+  if (project.projectMembers && project.projectMembers.length > 0) return true;
+  return false;
+};
 
 // @route   GET /api/tasks/project/:projectId
 // @desc    Listar tarefas de um projeto
 // @access  Private
 router.get('/project/:projectId', auth, async (req, res) => {
   try {
-    // Verificar se o projeto pertence ao usuário
-    const project = await Project.findOne({
-      where: {
-        id: req.params.projectId,
-        ownerId: req.user.id,
-      }
-    });
-
-    if (!project) {
+    // Verificar se o usuário tem acesso ao projeto
+    const hasAccess = await hasProjectAccess(req.params.projectId, req.user.id);
+    if (!hasAccess) {
       return res.status(404).json({ message: 'Projeto não encontrado' });
     }
 
@@ -27,7 +38,7 @@ router.get('/project/:projectId', auth, async (req, res) => {
       include: [{
         model: User,
         as: 'assignedTo',
-        attributes: ['id', 'name', 'email'],
+        attributes: ['id', 'name', 'email', 'nickname'],
         required: false
       }],
       order: [['order', 'ASC'], ['createdAt', 'DESC']]
@@ -54,15 +65,9 @@ router.post('/', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    // Verificar se o projeto pertence ao usuário
-    const project = await Project.findOne({
-      where: {
-        id: req.body.project,
-        ownerId: req.user.id,
-      }
-    });
-
-    if (!project) {
+    // Verificar se o usuário tem acesso ao projeto
+    const hasAccess = await hasProjectAccess(req.body.project, req.user.id);
+    if (!hasAccess) {
       return res.status(404).json({ message: 'Projeto não encontrado' });
     }
 
@@ -87,7 +92,7 @@ router.post('/', [
       include: [{
         model: User,
         as: 'assignedTo',
-        attributes: ['id', 'name', 'email'],
+        attributes: ['id', 'name', 'email', 'nickname'],
         required: false
       }]
     });
@@ -117,15 +122,9 @@ router.put('/:id', [
       return res.status(404).json({ message: 'Tarefa não encontrada' });
     }
 
-    // Verificar se o projeto pertence ao usuário
-    const project = await Project.findOne({
-      where: {
-        id: task.projectId,
-        ownerId: req.user.id,
-      }
-    });
-
-    if (!project) {
+    // Verificar se o usuário tem acesso ao projeto
+    const hasAccess = await hasProjectAccess(task.projectId, req.user.id);
+    if (!hasAccess) {
       return res.status(403).json({ message: 'Acesso negado' });
     }
 
@@ -141,7 +140,7 @@ router.put('/:id', [
       include: [{
         model: User,
         as: 'assignedTo',
-        attributes: ['id', 'name', 'email'],
+        attributes: ['id', 'name', 'email', 'nickname'],
         required: false
       }]
     });
@@ -172,15 +171,9 @@ router.put('/:id/move', [
       return res.status(404).json({ message: 'Tarefa não encontrada' });
     }
 
-    // Verificar se o projeto pertence ao usuário
-    const project = await Project.findOne({
-      where: {
-        id: task.projectId,
-        ownerId: req.user.id,
-      }
-    });
-
-    if (!project) {
+    // Verificar se o usuário tem acesso ao projeto
+    const hasAccess = await hasProjectAccess(task.projectId, req.user.id);
+    if (!hasAccess) {
       return res.status(403).json({ message: 'Acesso negado' });
     }
 
@@ -239,7 +232,7 @@ router.put('/:id/move', [
       include: [{
         model: User,
         as: 'assignedTo',
-        attributes: ['id', 'name', 'email'],
+        attributes: ['id', 'name', 'email', 'nickname'],
         required: false
       }]
     });
@@ -261,15 +254,9 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Tarefa não encontrada' });
     }
 
-    // Verificar se o projeto pertence ao usuário
-    const project = await Project.findOne({
-      where: {
-        id: task.projectId,
-        ownerId: req.user.id,
-      }
-    });
-
-    if (!project) {
+    // Verificar se o usuário tem acesso ao projeto
+    const hasAccess = await hasProjectAccess(task.projectId, req.user.id);
+    if (!hasAccess) {
       return res.status(403).json({ message: 'Acesso negado' });
     }
 

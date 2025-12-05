@@ -2,16 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import ProjectCard from '../components/ProjectCard';
 import ProjectModal from '../components/ProjectModal';
+import ProfileModal from '../components/ProfileModal';
 import './Dashboard.css';
 
 const Dashboard = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const { user, logout } = useContext(AuthContext);
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -62,8 +66,18 @@ const Dashboard = () => {
         <div className="header-content">
           <h1>Meus Projetos</h1>
           <div className="header-actions">
-            <span className="user-name">Olá, {user?.name}</span>
-            <button onClick={logout} className="btn-logout">
+            <span className="user-name">Olá, {user?.nickname || user?.name}</span>
+            <button 
+              onClick={() => setShowProfileModal(true)} 
+              className="btn btn-secondary btn-sm"
+              title="Meu Perfil"
+            >
+              👤 Perfil
+            </button>
+            <button onClick={toggleTheme} className="btn btn-secondary btn-icon" title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}>
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
+            <button onClick={logout} className="btn btn-danger btn-sm">
               Sair
             </button>
           </div>
@@ -76,7 +90,7 @@ const Dashboard = () => {
             <h2>Projetos ({projects.length})</h2>
             <button
               onClick={() => setShowModal(true)}
-              className="btn-create-project"
+              className="btn btn-primary"
             >
               + Novo Projeto
             </button>
@@ -89,7 +103,7 @@ const Dashboard = () => {
               <p>Você ainda não tem projetos.</p>
               <button
                 onClick={() => setShowModal(true)}
-                className="btn-create-project"
+                className="btn btn-primary"
               >
                 Criar Primeiro Projeto
               </button>
@@ -113,6 +127,12 @@ const Dashboard = () => {
         <ProjectModal
           onClose={() => setShowModal(false)}
           onSave={handleCreateProject}
+        />
+      )}
+
+      {showProfileModal && (
+        <ProfileModal
+          onClose={() => setShowProfileModal(false)}
         />
       )}
     </div>

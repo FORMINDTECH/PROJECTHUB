@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import './Auth.css';
 
 const Register = () => {
@@ -10,6 +11,7 @@ const Register = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useContext(AuthContext);
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -29,6 +31,9 @@ const Register = () => {
 
   return (
     <div className="auth-container">
+      <button onClick={toggleTheme} className="btn btn-secondary btn-icon" title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}>
+        {theme === 'dark' ? '☀️' : '🌙'}
+      </button>
       <div className="auth-card">
         <h1>Kanban</h1>
         <h2>Criar Conta</h2>
@@ -68,7 +73,7 @@ const Register = () => {
               placeholder="Mínimo 6 caracteres"
             />
           </div>
-          <button type="submit" disabled={loading} className="btn-primary">
+          <button type="submit" disabled={loading} className="btn btn-primary">
             {loading ? 'Criando...' : 'Criar Conta'}
           </button>
         </form>

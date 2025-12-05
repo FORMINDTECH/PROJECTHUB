@@ -1,13 +1,39 @@
+/* Variáveis CSS para temas */
+:root[data-theme="dark"] {
+  --bg-primary: #1a1d29;
+  --bg-secondary: #1e293b;
+  --bg-card: #0f172a;
+  --border-color: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+  --shadow: rgba(0, 0, 0, 0.3);
+}
+
+:root[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #64748b;
+  --shadow: rgba(0, 0, 0, 0.1);
+}
+
 .dashboard {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: var(--bg-primary);
+  transition: background-color 0.3s ease;
 }
 
 .dashboard-header {
-  background: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: var(--bg-secondary);
+  box-shadow: 0 2px 4px var(--shadow);
   padding: 20px 0;
   margin-bottom: 30px;
+  border-bottom: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 
 .header-content {
@@ -20,35 +46,24 @@
 }
 
 .dashboard-header h1 {
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.8rem;
+  transition: color 0.3s ease;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 15px;
 }
 
 .user-name {
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 500;
+  transition: color 0.3s ease;
 }
 
-.btn-logout {
-  padding: 8px 16px;
-  background: #f44336;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background 0.3s;
-}
-
-.btn-logout:hover {
-  background: #d32f2f;
-}
+/* Botões usam classes padronizadas do buttons.css */
 
 .dashboard-main {
   max-width: 1200px;
@@ -57,10 +72,12 @@
 }
 
 .projects-container {
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 30px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px var(--shadow);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 
 .projects-header {
@@ -71,25 +88,27 @@
 }
 
 .projects-header h2 {
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.5rem;
+  transition: color 0.3s ease;
 }
 
 .btn-create-project {
   padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #3b82f6;
   color: white;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.3s;
 }
 
 .btn-create-project:hover {
+  background: #2563eb;
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
 .projects-grid {
@@ -98,11 +117,17 @@
   gap: 20px;
 }
 
-.loading,
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .empty-state p {
@@ -111,18 +136,8 @@
 }
 
 @media (max-width: 768px) {
-  .header-content {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .header-actions {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .projects-container {
-    padding: 20px;
+  .projects-grid {
+    grid-template-columns: 1fr;
   }
 
   .projects-header {
@@ -131,16 +146,5 @@
     gap: 15px;
   }
 
-  .btn-create-project {
-    width: 100%;
-  }
-
-  .projects-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .dashboard-main {
-    padding: 0 10px;
-  }
+  /* Botões usam classes padronizadas do buttons.css */
 }
-

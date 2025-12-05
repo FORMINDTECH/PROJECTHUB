@@ -1,0 +1,154 @@
+.post-it {
+  width: 180px;
+  min-height: 180px;
+  background-color: #ffeb3b;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+  padding: 12px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  transform: rotate(-2deg);
+  margin-bottom: 15px;
+  user-select: none;
+}
+
+.post-it[style*="cursor: not-allowed"] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.post-it::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 20px 20px 0;
+  border-color: transparent rgba(0, 0, 0, 0.1) transparent transparent;
+}
+
+.post-it:hover {
+  transform: rotate(0deg) scale(1.05);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.post-it.dragging {
+  transform: rotate(0deg) scale(1.1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+
+.post-it-saved {
+  cursor: grab !important;
+}
+
+.post-it-saved:active {
+  cursor: grabbing !important;
+}
+
+.post-it-editing {
+  cursor: default !important;
+  transform: rotate(0deg);
+  pointer-events: auto;
+}
+
+.post-it-editing:hover {
+  transform: scale(1.02);
+}
+
+.post-it-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.post-it-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.post-it-icon {
+  font-size: 20px;
+}
+
+.post-it-save-btn,
+.post-it-edit-btn {
+  background: rgba(255, 255, 255, 0.7);
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  padding: 0;
+  line-height: 1;
+}
+
+.post-it-save-btn:hover {
+  background: rgba(76, 175, 80, 0.8);
+  color: white;
+}
+
+.post-it-edit-btn:hover {
+  background: rgba(33, 150, 243, 0.8);
+  color: white;
+}
+
+.post-it-title-input,
+.post-it-description-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  color: #333;
+  outline: none;
+  resize: none;
+}
+
+.post-it-title-input {
+  font-size: 14px;
+  font-weight: bold;
+  padding: 4px 0;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.2);
+}
+
+.post-it-description-input {
+  font-size: 12px;
+  padding: 4px 0;
+  flex: 1;
+}
+
+.post-it-title-input::placeholder,
+.post-it-description-input::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.post-it-text {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  color: #333;
+  word-wrap: break-word;
+}
+
+.post-it-title {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 4px;
+  text-align: left;
+}
+
+.post-it-description {
+  font-size: 11px;
+  text-align: left;
+  opacity: 0.8;
+  margin-top: 4px;
+}
+
