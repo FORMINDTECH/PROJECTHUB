@@ -38,7 +38,7 @@ const QuickTaskForm = ({ onTaskCreated, onDraftChange }) => {
     isDragging,
   } = useDraggable({ 
     id: draftId,
-    disabled: !title.trim() || isEditing, // Só pode arrastar se tiver título e não estiver editando
+    disabled: !title.trim(), // Só pode arrastar se tiver título
     data: {
       type: 'draft',
       draftData: {
@@ -73,7 +73,7 @@ const QuickTaskForm = ({ onTaskCreated, onDraftChange }) => {
       ref={setNodeRef}
       style={style}
       className={`postit-form-card ${isDragging ? 'dragging' : ''} ${hasContent ? 'has-content' : ''}`}
-      {...(!isEditing && hasContent ? { ...listeners, ...attributes } : {})}
+      {...(hasContent ? { ...listeners, ...attributes } : {})}
     >
       <div className="postit-form-header">
         <div className="postit-form-icon">📝</div>
@@ -89,43 +89,34 @@ const QuickTaskForm = ({ onTaskCreated, onDraftChange }) => {
         )}
       </div>
 
-      <div className="postit-form-content">
-        <div className="postit-writing-area">
-          <div className="postit-lines">
-            <input
-              type="text"
-              placeholder="Escreva aqui..."
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              className="postit-line-input"
-              maxLength={50}
-            />
-            {title && (
-              <>
-                <div className="postit-line"></div>
-                <textarea
-                  placeholder="Mais detalhes..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                  className="postit-line-textarea"
-                  rows="4"
-                  maxLength={200}
-                />
-              </>
-            )}
+        <div className="postit-form-content">
+          <div className="postit-writing-area">
+            <div className="postit-lines">
+              <input
+                type="text"
+                placeholder="Digite o título da tarefa..."
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                className="postit-line-input"
+                maxLength={50}
+              />
+              <textarea
+                placeholder="Adicione uma descrição (opcional)..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                className="postit-line-textarea"
+                rows="4"
+                maxLength={200}
+              />
+            </div>
           </div>
-        </div>
 
-        {hasContent && !isEditing && (
-          <div className="postit-form-hint">
-            <small>💡 Arraste para uma coluna</small>
-          </div>
-        )}
-      </div>
+        </div>
+        <div className="postit-glue-strip"></div>
     </div>
   );
 };

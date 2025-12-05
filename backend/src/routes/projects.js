@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const { Project, Task, ProjectMember, User } = require('../models');
+const { Project, Task, ProjectMember, User, ProjectInvite } = require('../models');
 const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const { Op } = require('sequelize');
@@ -198,6 +198,31 @@ router.post('/:id/logo', auth, upload.single('logo'), async (req, res) => {
   }
 });
 
+// @route   DELETE /api/projects/:id/logo
+// @desc    Remover logo do projeto
+// @access  Private
+router.delete('/:id/logo', auth, async (req, res) => {
+  try {
+    const project = await Project.findByPk(req.params.id);
+    if (!project) {
+      return res.status(404).json({ message: 'Projeto não encontrado' });
+    }
+
+    // Apenas o owner pode remover logo
+    if (project.ownerId !== req.user.id) {
+      return res.status(403).json({ message: 'Apenas o dono do projeto pode remover o logo' });
+    }
+
+    project.logo = null;
+    await project.save();
+
+    res.json(project);
+  } catch (error) {
+    console.error('Erro ao remover logo:', error);
+    res.status(500).json({ message: 'Erro ao remover logo' });
+  }
+});
+
 // @route   DELETE /api/projects/:id
 // @desc    Deletar projeto
 // @access  Private
@@ -230,7 +255,7 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // @route   POST /api/projects/:id/members
-// @desc    Adicionar membro ao projeto
+// @desc    Adicionar membro ao projeto (DEPRECATED - usar invites)
 // @access  Private (apenas owner)
 router.post('/:id/members', [
   auth,
@@ -284,6 +309,129 @@ router.post('/:id/members', [
   } catch (error) {
     console.error('Erro ao adicionar membro:', error);
     res.status(500).json({ message: 'Erro ao adicionar membro' });
+  }
+});
+
+// @route   POST /api/projects/:id/invites
+// @desc    Enviar convite para o projeto
+// @access  Private (apenas owner)
+router.post('/:id/invites', [
+  auth,
+  body('email').isEmail().withMessage('Email inválido'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const project = await Project.findByPk(req.params.id);
+    if (!project) {
+      return res.status(404).json({ message: 'Projeto não encontrado' });
+    }
+
+    // Apenas o owner pode enviar convites
+    if (project.ownerId !== req.user.id) {
+      return res.status(403).json({ message: 'Apenas o dono do projeto pode enviar convites' });
+    }
+
+    // Buscar usuário por email
+    const user = await User.findOne({ where: { email: req.body.email.toLowerCase() } });
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+
+    // Não pode convidar o próprio owner
+    if (user.id === project.ownerId) {
+      return res.status(400).json({ message: 'O dono do projeto já é membro' });
+    }
+
+    // Verificar se já é membro
+    const existingMember = await ProjectMember.findOne({
+      where: { projectId: project.id, userId: user.id }
+    });
+    if (existingMember) {
+      return res.status(400).json({ message: 'Usuário já é membro do projeto' });
+    }
+
+    // Verificar se já existe convite pendente
+    const existingInvite = await ProjectInvite.findOne({
+      where: {
+        projectId: project.id,
+        userId: user.id,
+        status: 'pending'
+      }
+    });
+
+    if (existingInvite) {
+      return res.status(400).json({ message: 'Já existe um convite pendente para este usuário' });
+    }
+
+    // Criar convite
+    const invite = await ProjectInvite.create({
+      projectId: project.id,
+      userId: user.id,
+      inviterId: req.user.id,
+      status: 'pending'
+    });
+
+    // Carregar dados completos do convite
+    await invite.reload({
+      include: [
+        {
+          model: User,
+          as: 'invitedUser',
+          attributes: ['id', 'name', 'email', 'nickname', 'avatar']
+        },
+        {
+          model: User,
+          as: 'inviter',
+          attributes: ['id', 'name', 'nickname', 'avatar']
+        }
+      ]
+    });
+
+    res.status(201).json(invite);
+  } catch (error) {
+    console.error('Erro ao enviar convite:', error);
+    res.status(500).json({ message: 'Erro ao enviar convite' });
+  }
+});
+
+// @route   GET /api/projects/:id/invites
+// @desc    Listar convites pendentes do projeto
+// @access  Private (apenas owner)
+router.get('/:id/invites', auth, async (req, res) => {
+  try {
+    const project = await Project.findByPk(req.params.id);
+    if (!project) {
+      return res.status(404).json({ message: 'Projeto não encontrado' });
+    }
+
+    // Apenas o owner pode ver convites
+    if (project.ownerId !== req.user.id) {
+      return res.status(403).json({ message: 'Apenas o dono do projeto pode ver convites' });
+    }
+
+    const invites = await ProjectInvite.findAll({
+      where: {
+        projectId: project.id,
+        status: 'pending'
+      },
+      include: [
+        {
+          model: User,
+          as: 'invitedUser',
+          attributes: ['id', 'name', 'email', 'nickname', 'avatar']
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    res.json(invites);
+  } catch (error) {
+    console.error('Erro ao listar convites:', error);
+    res.status(500).json({ message: 'Erro ao listar convites' });
   }
 });
 

@@ -122,11 +122,11 @@
   color: var(--text-secondary);
 }
 
-.owner-badge {
-  margin-left: 8px;
+.member-created-date {
   font-size: 0.75rem;
-  color: var(--accent-blue);
-  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+  font-style: italic;
 }
 
 .empty-members {

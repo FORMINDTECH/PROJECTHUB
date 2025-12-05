@@ -7,6 +7,7 @@ import api from '../services/api';
 import ProjectCard from '../components/ProjectCard';
 import ProjectModal from '../components/ProjectModal';
 import ProfileModal from '../components/ProfileModal';
+import InvitesModal from '../components/InvitesModal';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -14,13 +15,25 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showInvitesModal, setShowInvitesModal] = useState(false);
+  const [pendingInvitesCount, setPendingInvitesCount] = useState(0);
   const { user, logout } = useContext(AuthContext);
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   useEffect(() => {
     loadProjects();
+    loadInvitesCount();
   }, []);
+
+  const loadInvitesCount = async () => {
+    try {
+      const response = await api.get('/invites');
+      setPendingInvitesCount(response.data?.length || 0);
+    } catch (error) {
+      console.error('Erro ao carregar contagem de convites:', error);
+    }
+  };
 
   const loadProjects = async () => {
     try {
@@ -67,6 +80,15 @@ const Dashboard = () => {
           <h1>Meus Projetos</h1>
           <div className="header-actions">
             <span className="user-name">Olá, {user?.nickname || user?.name}</span>
+            {pendingInvitesCount > 0 && (
+              <button 
+                onClick={() => setShowInvitesModal(true)} 
+                className="btn btn-primary btn-sm invites-btn"
+                title="Convites Pendentes"
+              >
+                📬 Convites ({pendingInvitesCount})
+              </button>
+            )}
             <button 
               onClick={() => setShowProfileModal(true)} 
               className="btn btn-secondary btn-sm user-profile-btn"
@@ -146,6 +168,18 @@ const Dashboard = () => {
           onClose={() => setShowProfileModal(false)}
         />
       )}
+
+      <InvitesModal
+        isOpen={showInvitesModal}
+        onClose={() => {
+          setShowInvitesModal(false);
+          loadInvitesCount();
+        }}
+        onUpdate={() => {
+          loadProjects();
+          loadInvitesCount();
+        }}
+      />
     </div>
   );
 };

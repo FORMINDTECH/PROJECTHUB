@@ -23,6 +23,7 @@ import QuickTaskForm from '../components/QuickTaskForm';
 import ProjectMembersModal from '../components/ProjectMembersModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AssignMemberModal from '../components/AssignMemberModal';
+import EditProjectModal from '../components/EditProjectModal';
 import { useTheme } from '../context/ThemeContext';
 import { AuthContext } from '../context/AuthContext';
 import './ProjectBoard.css';
@@ -273,6 +274,7 @@ const ProjectBoard = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showMembersModal, setShowMembersModal] = useState(false);
+  const [showEditProjectModal, setShowEditProjectModal] = useState(false);
   const [projectMembers, setProjectMembers] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [taskCreated, setTaskCreated] = useState(0);
@@ -284,7 +286,11 @@ const ProjectBoard = () => {
   const { user } = useContext(AuthContext);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 10, // Requer movimento de 10px antes de ativar o drag
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -649,18 +655,27 @@ const ProjectBoard = () => {
               {project.description && <p>{project.description}</p>}
             </div>
           </div>
-          <div className="header-actions">
-            <button 
-              onClick={() => setShowMembersModal(true)} 
-              className="btn btn-secondary btn-sm"
-              title="Membros do Projeto"
-            >
-              👥 Membros
-            </button>
-            <button onClick={toggleTheme} className="btn btn-secondary btn-icon" title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}>
-              {theme === 'dark' ? '☀️' : '🌙'}
-            </button>
-          </div>
+            <div className="header-actions">
+              {project?.ownerId === user?.id && (
+                <button 
+                  onClick={() => setShowEditProjectModal(true)} 
+                  className="btn btn-secondary btn-sm"
+                  title="Editar Projeto"
+                >
+                  ✏️ Editar Projeto
+                </button>
+              )}
+              <button 
+                onClick={() => setShowMembersModal(true)} 
+                className="btn btn-secondary btn-sm"
+                title="Membros do Projeto"
+              >
+                👥 Membros
+              </button>
+              <button onClick={toggleTheme} className="btn btn-secondary btn-icon" title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}>
+                {theme === 'dark' ? '☀️' : '🌙'}
+              </button>
+            </div>
         </div>
       </header>
 
@@ -775,6 +790,7 @@ const ProjectBoard = () => {
           onClose={() => setShowMembersModal(false)}
           isOwner={project?.ownerId === user?.id}
           projectOwner={project?.owner}
+          projectCreatedAt={project?.createdAt}
         />
       )}
 
@@ -792,6 +808,13 @@ const ProjectBoard = () => {
         task={assignModal.task}
         projectId={id}
         onAssign={handleAssignMember}
+      />
+
+      <EditProjectModal
+        isOpen={showEditProjectModal}
+        onClose={() => setShowEditProjectModal(false)}
+        project={project}
+        onUpdate={loadProject}
       />
     </div>
   );

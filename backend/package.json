@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.js",
     "migrate": "node migrations/run-migration.js",
     "migrate:avatar": "node migrations/run-avatar-migration.js",
-    "migrate:null-status": "node migrations/run-null-status-migration.js"
+    "migrate:null-status": "node migrations/run-null-status-migration.js",
+    "migrate:invites": "node migrations/run-invites-migration.js"
   },
   "keywords": [
     "kanban",

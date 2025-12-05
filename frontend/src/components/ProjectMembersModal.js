@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import SuccessModal from './SuccessModal';
 import './ProjectMembersModal.css';
 
-const ProjectMembersModal = ({ projectId, onClose, isOwner, projectOwner = null }) => {
+const ProjectMembersModal = ({ projectId, onClose, isOwner, projectOwner = null, projectCreatedAt = null }) => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addingMember, setAddingMember] = useState(false);
   const [memberEmail, setMemberEmail] = useState('');
   const [error, setError] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     loadMembers();
@@ -37,13 +39,15 @@ const ProjectMembersModal = ({ projectId, onClose, isOwner, projectOwner = null 
     setAddingMember(true);
 
     try {
-      const newMember = await api.post(`/projects/${projectId}/members`, {
+      // Enviar convite ao invés de adicionar diretamente
+      await api.post(`/projects/${projectId}/invites`, {
         email: memberEmail
       });
-      setMembers([...members, newMember.data]);
       setMemberEmail('');
+      setError(''); // Limpar erro
+      setShowSuccessModal(true);
     } catch (error) {
-      setError(error.response?.data?.message || 'Erro ao adicionar membro');
+      setError(error.response?.data?.message || 'Erro ao enviar convite');
     } finally {
       setAddingMember(false);
     }
@@ -82,12 +86,12 @@ const ProjectMembersModal = ({ projectId, onClose, isOwner, projectOwner = null 
                     type="email"
                     value={memberEmail}
                     onChange={(e) => setMemberEmail(e.target.value)}
-                    placeholder="Email do usuário"
+                    placeholder="Email do usuário para convidar"
                     required
                     className="member-email-input"
                   />
                   <button type="submit" disabled={addingMember} className="btn btn-primary btn-sm">
-                    {addingMember ? 'Adicionando...' : 'Adicionar'}
+                    {addingMember ? 'Enviando...' : 'Enviar Convite'}
                   </button>
                 </div>
               </form>
@@ -121,9 +125,17 @@ const ProjectMembersModal = ({ projectId, onClose, isOwner, projectOwner = null 
                         <div className="member-details">
                           <div className="member-name">
                             {member.nickname || member.name}
-                            {isProjectOwner && <span className="owner-badge">👑 Dono</span>}
                           </div>
                           <div className="member-email">{member.email}</div>
+                          {isProjectOwner && projectCreatedAt && (
+                            <div className="member-created-date">
+                              Criado em {new Date(projectCreatedAt).toLocaleDateString('pt-BR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
                       {isOwner && !isProjectOwner && (
@@ -142,6 +154,13 @@ const ProjectMembersModal = ({ projectId, onClose, isOwner, projectOwner = null 
           </>
         )}
       </div>
+
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="Convite Enviado!"
+        message="Convite enviado com sucesso! O usuário receberá uma notificação."
+      />
     </div>
   );
 };
