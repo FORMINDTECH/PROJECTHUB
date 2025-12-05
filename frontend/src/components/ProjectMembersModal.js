@@ -11,7 +11,7 @@ const ProjectMembersModal = ({ projectId, onClose, isOwner, projectOwner = null,
   const [addingMember, setAddingMember] = useState(false);
   const [memberEmail, setMemberEmail] = useState('');
   const [error, setError] = useState('');
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModal, setSuccessModal] = useState({ isOpen: false, title: '', message: '' });
   const [errorModal, setErrorModal] = useState({ isOpen: false, message: '' });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, memberId: null });
 
@@ -49,7 +49,11 @@ const ProjectMembersModal = ({ projectId, onClose, isOwner, projectOwner = null,
       });
       setMemberEmail('');
       setError(''); // Limpar erro
-      setShowSuccessModal(true);
+      setSuccessModal({ 
+        isOpen: true, 
+        title: 'Convite Enviado!', 
+        message: 'Convite enviado com sucesso! O usuário receberá uma notificação.' 
+      });
     } catch (error) {
       setError(error.response?.data?.message || 'Erro ao enviar convite');
     } finally {
@@ -67,7 +71,11 @@ const ProjectMembersModal = ({ projectId, onClose, isOwner, projectOwner = null,
     try {
       await api.delete(`/projects/${projectId}/members/${confirmModal.memberId}`);
       setMembers(members.filter(m => m.id !== confirmModal.memberId));
-      setSuccessModal({ isOpen: true, message: 'Membro removido com sucesso!' });
+      setSuccessModal({ 
+        isOpen: true, 
+        title: 'Membro Removido!', 
+        message: 'Membro removido com sucesso!' 
+      });
     } catch (error) {
       setErrorModal({ isOpen: true, message: 'Erro ao remover membro' });
     } finally {
@@ -165,10 +173,10 @@ const ProjectMembersModal = ({ projectId, onClose, isOwner, projectOwner = null,
       </div>
 
       <SuccessModal
-        isOpen={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
-        title="Convite Enviado!"
-        message="Convite enviado com sucesso! O usuário receberá uma notificação."
+        isOpen={successModal.isOpen}
+        onClose={() => setSuccessModal({ isOpen: false, title: '', message: '' })}
+        title={successModal.title}
+        message={successModal.message}
       />
 
       <ErrorModal

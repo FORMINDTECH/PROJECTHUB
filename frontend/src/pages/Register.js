@@ -35,7 +35,10 @@ const Register = () => {
         {theme === 'dark' ? '☀️' : '🌙'}
       </button>
       <div className="auth-card">
-        <h1>Kanban</h1>
+        <div className="auth-logo">
+          <h1 className="logo-text">ProjectHub</h1>
+          <div className="logo-icon">📊</div>
+        </div>
         <h2>Criar Conta</h2>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
