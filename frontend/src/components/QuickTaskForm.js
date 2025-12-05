@@ -1,128 +1,133 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useDraggable } from '@dnd-kit/core';
+import { useTheme } from '../context/ThemeContext';
 import './QuickTaskForm.css';
 
-const QuickTaskForm = ({ onCreateTask, columns }) => {
+const QuickTaskForm = ({ onTaskCreated, onDraftChange }) => {
+  const { theme } = useTheme();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('todo');
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (title.trim()) {
-      console.log('QuickTaskForm - Criando tarefa com status:', selectedStatus);
-      const result = await onCreateTask({
-        title: title.trim(),
-        description: description.trim(),
-        status: selectedStatus,
-      });
-      
-      if (result && result.success) {
-        // Limpar apenas os campos, mas manter o formulário aberto
-        setTitle('');
-        setDescription('');
-        // Não fechar o formulário - setIsExpanded(false); removido
-      } else if (result && result.error) {
-        alert(result.error);
+  // Limpar campos quando uma tarefa for criada
+  useEffect(() => {
+    if (onTaskCreated > 0) {
+      setTitle('');
+      setDescription('');
+      if (onDraftChange) {
+        onDraftChange({ title: '', description: '' });
       }
     }
+  }, [onTaskCreated, onDraftChange]);
+
+  // Notificar mudanças no draft para o componente pai
+  useEffect(() => {
+    if (onDraftChange) {
+      onDraftChange({ title, description });
+    }
+  }, [title, description, onDraftChange]);
+
+  // ID temporário para o post-it em edição
+  const draftId = 'draft-postit';
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({ 
+    id: draftId,
+    disabled: !title.trim() || isEditing, // Só pode arrastar se tiver título e não estiver editando
+    data: {
+      type: 'draft',
+      draftData: {
+        title,
+        description,
+      },
+    },
+  });
+
+  const style = {
+    opacity: isDragging ? 0 : 1,
+    visibility: isDragging ? 'hidden' : 'visible',
   };
 
-  const selectedColumn = columns.find(col => col.status === selectedStatus);
+  const handleFocus = () => {
+    setIsEditing(true);
+  };
+
+  const handleBlur = () => {
+    setIsEditing(false);
+  };
+
+  const handleClear = () => {
+    setTitle('');
+    setDescription('');
+  };
+
+  const hasContent = title.trim().length > 0;
 
   return (
-    <div className="quick-task-form">
-      <div 
-        className={`quick-task-header ${isExpanded ? 'expanded' : ''}`}
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div className="quick-task-icon">📝</div>
-        <span className="quick-task-title">Nova Tarefa Rápida</span>
-        <span className="quick-task-arrow">{isExpanded ? '▼' : '▶'}</span>
+    <div 
+      ref={setNodeRef}
+      style={style}
+      className={`postit-form-card ${isDragging ? 'dragging' : ''} ${hasContent ? 'has-content' : ''}`}
+      {...(!isEditing && hasContent ? { ...listeners, ...attributes } : {})}
+    >
+      <div className="postit-form-header">
+        <div className="postit-form-icon">📝</div>
+        {hasContent && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="btn btn-ghost btn-icon btn-sm postit-clear-btn"
+            title="Limpar"
+          >
+            ×
+          </button>
+        )}
       </div>
 
-      {isExpanded && (
-        <form className="quick-task-content" onSubmit={handleSubmit}>
-          <div className="quick-task-field">
+      <div className="postit-form-content">
+        <div className="postit-writing-area">
+          <div className="postit-lines">
             <input
               type="text"
-              placeholder="Título da tarefa *"
+              placeholder="Escreva aqui..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              required
-              autoFocus
-              className="quick-task-input"
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              className="postit-line-input"
+              maxLength={50}
             />
+            {title && (
+              <>
+                <div className="postit-line"></div>
+                <textarea
+                  placeholder="Mais detalhes..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  className="postit-line-textarea"
+                  rows="4"
+                  maxLength={200}
+                />
+              </>
+            )}
           </div>
+        </div>
 
-          <div className="quick-task-field">
-            <textarea
-              placeholder="Descrição (opcional)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows="3"
-              className="quick-task-textarea"
-            />
+        {hasContent && !isEditing && (
+          <div className="postit-form-hint">
+            <small>💡 Arraste para uma coluna</small>
           </div>
-
-          <div className="quick-task-field">
-            <label className="quick-task-label">Criar em:</label>
-            <div className="quick-task-columns">
-              {columns.map((column) => {
-                const isActive = selectedStatus === column.status;
-                // Cores mais elegantes e profissionais
-                const statusColors = {
-                  'todo': { bg: '#fee2e2', border: '#ef4444', text: '#991b1b' },
-                  'in-progress': { bg: '#fef3c7', border: '#f59e0b', text: '#92400e' },
-                  'done': { bg: '#d1fae5', border: '#10b981', text: '#065f46' }
-                };
-                const colors = statusColors[column.status] || { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af' };
-                
-                return (
-                  <button
-                    key={column.id}
-                    type="button"
-                    className={`quick-task-column-btn ${
-                      isActive ? 'active' : ''
-                    }`}
-                    style={{
-                      backgroundColor: isActive ? colors.bg : 'transparent',
-                      borderColor: colors.border,
-                      color: isActive ? colors.text : colors.border,
-                    }}
-                    onClick={() => setSelectedStatus(column.status)}
-                  >
-                    {column.title}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="quick-task-actions">
-            <button
-              type="button"
-              onClick={() => {
-                setIsExpanded(false);
-                setTitle('');
-                setDescription('');
-              }}
-              className="btn btn-secondary btn-sm"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary btn-sm"
-            >
-              Criar Tarefa
-            </button>
-          </div>
-        </form>
-      )}
+        )}
+      </div>
     </div>
   );
 };
 
 export default QuickTaskForm;
-

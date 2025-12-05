@@ -73,7 +73,7 @@ router.get('/:id', auth, async (req, res) => {
       include: [{
         model: User,
         as: 'members',
-        attributes: ['id', 'name', 'email', 'nickname'],
+        attributes: ['id', 'name', 'email', 'nickname', 'avatar'],
         through: { attributes: [] }
       }, {
         model: User,
@@ -121,7 +121,7 @@ router.post('/', [
       include: [{
         model: User,
         as: 'members',
-        attributes: ['id', 'name', 'email', 'nickname'],
+        attributes: ['id', 'name', 'email', 'nickname', 'avatar'],
         through: { attributes: [] }
       }]
     });
@@ -333,7 +333,7 @@ router.get('/:id/members', auth, async (req, res) => {
       include: [{
         model: User,
         as: 'user',
-        attributes: ['id', 'name', 'email', 'nickname']
+        attributes: ['id', 'name', 'email', 'nickname', 'avatar']
       }]
     });
 

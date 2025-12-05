@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import './ProfileModal.css';
@@ -10,8 +10,20 @@ const ProfileModal = ({ onClose }) => {
   // Perfil
   const [name, setName] = useState(user?.name || '');
   const [nickname, setNickname] = useState(user?.nickname || '');
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const [loadingAvatar, setLoadingAvatar] = useState(false);
   const [errorProfile, setErrorProfile] = useState('');
+
+  // Atualizar preview do avatar quando o usuário mudar
+  useEffect(() => {
+    if (user?.avatar) {
+      setAvatarPreview(`http://localhost:5000${user.avatar}`);
+    } else {
+      setAvatarPreview(null);
+    }
+  }, [user?.avatar]);
 
   // Email
   const [email, setEmail] = useState(user?.email || '');
@@ -25,6 +37,60 @@ const ProfileModal = ({ onClose }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loadingPassword, setLoadingPassword] = useState(false);
   const [errorPassword, setErrorPassword] = useState('');
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAvatarUpload = async () => {
+    if (!avatarFile) return;
+
+    setLoadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', avatarFile);
+
+      const response = await api.post('/auth/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      setUser(response.data.user);
+      setAvatarFile(null);
+      alert('Foto de perfil atualizada com sucesso!');
+    } catch (error) {
+      alert(error.response?.data?.message || 'Erro ao fazer upload da foto');
+    } finally {
+      setLoadingAvatar(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!window.confirm('Tem certeza que deseja remover sua foto de perfil?')) {
+      return;
+    }
+
+    setLoadingAvatar(true);
+    try {
+      const response = await api.delete('/auth/avatar');
+      setUser(response.data.user);
+      setAvatarPreview(null);
+      setAvatarFile(null);
+      alert('Foto de perfil removida com sucesso!');
+    } catch (error) {
+      alert(error.response?.data?.message || 'Erro ao remover foto');
+    } finally {
+      setLoadingAvatar(false);
+    }
+  };
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -123,6 +189,53 @@ const ProfileModal = ({ onClose }) => {
             <form onSubmit={handleUpdateProfile}>
               {errorProfile && <div className="error-message">{errorProfile}</div>}
               
+              <div className="form-group avatar-section">
+                <label>Foto de Perfil</label>
+                <div className="avatar-upload">
+                  <div className="avatar-preview">
+                    {avatarPreview ? (
+                      <img src={avatarPreview} alt="Preview" />
+                    ) : (
+                      <div className="avatar-placeholder">
+                        {user?.name?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                    )}
+                  </div>
+                  <div className="avatar-actions">
+                    <label htmlFor="avatar-input" className="btn btn-secondary btn-sm">
+                      {avatarFile ? 'Trocar Foto' : 'Escolher Foto'}
+                    </label>
+                    <input
+                      type="file"
+                      id="avatar-input"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      style={{ display: 'none' }}
+                    />
+                    {avatarFile && (
+                      <button
+                        type="button"
+                        onClick={handleAvatarUpload}
+                        disabled={loadingAvatar}
+                        className="btn btn-primary btn-sm"
+                      >
+                        {loadingAvatar ? 'Enviando...' : 'Salvar Foto'}
+                      </button>
+                    )}
+                    {avatarPreview && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        disabled={loadingAvatar}
+                        className="btn btn-danger btn-sm"
+                      >
+                        Remover
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="form-group">
                 <label htmlFor="name">Nome Completo *</label>
                 <input

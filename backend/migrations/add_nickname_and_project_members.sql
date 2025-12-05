@@ -1,9 +1,13 @@
--- Migração para adicionar campo nickname na tabela users
+-- Migração para adicionar campo nickname e avatar na tabela users
 -- e criar tabela project_members
 
 -- Adicionar coluna nickname na tabela users
 ALTER TABLE `users` 
 ADD COLUMN `nickname` VARCHAR(255) NULL AFTER `password`;
+
+-- Adicionar coluna avatar na tabela users
+ALTER TABLE `users` 
+ADD COLUMN `avatar` VARCHAR(255) NULL AFTER `nickname`;
 
 -- Criar tabela project_members
 CREATE TABLE IF NOT EXISTS `project_members` (

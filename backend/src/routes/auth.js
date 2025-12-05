@@ -4,6 +4,9 @@ const { body, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const auth = require('../middleware/auth');
+const uploadAvatar = require('../middleware/uploadAvatar');
+const fs = require('fs');
+const path = require('path');
 
 // Gerar token JWT
 const generateToken = (userId) => {
@@ -108,14 +111,15 @@ router.post('/login', [
 // @desc    Obter usuário atual
 // @access  Private
 router.get('/me', auth, async (req, res) => {
-  res.json({
-    user: {
-      id: req.user.id,
-      name: req.user.name,
-      email: req.user.email,
-      nickname: req.user.nickname,
-    },
-  });
+    res.json({
+      user: {
+        id: req.user.id,
+        name: req.user.name,
+        email: req.user.email,
+        nickname: req.user.nickname,
+        avatar: req.user.avatar,
+      },
+    });
 });
 
 // @route   PUT /api/auth/profile
@@ -145,6 +149,7 @@ router.put('/profile', auth, [
         name: user.name,
         email: user.email,
         nickname: user.nickname,
+        avatar: user.avatar,
       },
     });
   } catch (error) {
@@ -195,6 +200,7 @@ router.put('/change-email', auth, [
         name: user.name,
         email: user.email,
         nickname: user.nickname,
+        avatar: user.avatar,
       },
     });
   } catch (error) {
@@ -233,6 +239,75 @@ router.put('/change-password', auth, [
   } catch (error) {
     console.error('Erro ao trocar senha:', error);
     res.status(500).json({ message: 'Erro ao trocar senha' });
+  }
+});
+
+// @route   POST /api/auth/avatar
+// @desc    Upload de foto de perfil
+// @access  Private
+router.post('/avatar', auth, uploadAvatar.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Nenhuma imagem enviada' });
+    }
+
+    const user = await User.findByPk(req.user.id);
+
+    // Deletar avatar antigo se existir
+    if (user.avatar) {
+      const oldAvatarPath = path.join(__dirname, '../../uploads', user.avatar.replace('/uploads/', ''));
+      if (fs.existsSync(oldAvatarPath)) {
+        fs.unlinkSync(oldAvatarPath);
+      }
+    }
+
+    user.avatar = `/uploads/${req.file.filename}`;
+    await user.save();
+
+    res.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        nickname: user.nickname,
+        avatar: user.avatar,
+      },
+    });
+  } catch (error) {
+    console.error('Erro ao fazer upload do avatar:', error);
+    res.status(500).json({ message: 'Erro ao fazer upload do avatar' });
+  }
+});
+
+// @route   DELETE /api/auth/avatar
+// @desc    Remover foto de perfil
+// @access  Private
+router.delete('/avatar', auth, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+
+    if (user.avatar) {
+      const avatarPath = path.join(__dirname, '../../uploads', user.avatar.replace('/uploads/', ''));
+      if (fs.existsSync(avatarPath)) {
+        fs.unlinkSync(avatarPath);
+      }
+    }
+
+    user.avatar = null;
+    await user.save();
+
+    res.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        nickname: user.nickname,
+        avatar: user.avatar,
+      },
+    });
+  } catch (error) {
+    console.error('Erro ao remover avatar:', error);
+    res.status(500).json({ message: 'Erro ao remover avatar' });
   }
 });
 

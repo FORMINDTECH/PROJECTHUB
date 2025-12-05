@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-async function runMigration() {
+async function runAvatarMigration() {
   let connection;
   
   try {
@@ -19,29 +19,20 @@ async function runMigration() {
     console.log('✅ Conectado ao banco de dados');
 
     // Ler o arquivo SQL
-    const sqlFile = path.join(__dirname, 'add_nickname_and_project_members.sql');
+    const sqlFile = path.join(__dirname, 'add_avatar_column.sql');
     const sql = fs.readFileSync(sqlFile, 'utf8');
 
-    console.log('📝 Executando migração...');
+    console.log('📝 Executando migração para adicionar coluna avatar...');
 
     // Executar a migração
     await connection.query(sql);
 
     console.log('✅ Migração executada com sucesso!');
-    console.log('   - Coluna "nickname" adicionada na tabela "users"');
     console.log('   - Coluna "avatar" adicionada na tabela "users"');
-    console.log('   - Tabela "project_members" criada');
 
   } catch (error) {
     console.error('❌ Erro ao executar migração:', error.message);
-    
-    if (error.code === 'ER_DUP_FIELDNAME') {
-      console.log('⚠️  Uma ou mais colunas já existem. Pulando...');
-    } else if (error.code === 'ER_TABLE_EXISTS_ERROR') {
-      console.log('⚠️  A tabela "project_members" já existe. Pulando...');
-    } else {
-      process.exit(1);
-    }
+    process.exit(1);
   } finally {
     if (connection) {
       await connection.end();
@@ -50,5 +41,5 @@ async function runMigration() {
   }
 }
 
-runMigration();
+runAvatarMigration();
 

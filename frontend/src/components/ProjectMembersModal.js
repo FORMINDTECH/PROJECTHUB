@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import './ProjectMembersModal.css';
 
-const ProjectMembersModal = ({ projectId, onClose, isOwner }) => {
+const ProjectMembersModal = ({ projectId, onClose, isOwner, projectOwner = null }) => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addingMember, setAddingMember] = useState(false);
@@ -11,12 +11,19 @@ const ProjectMembersModal = ({ projectId, onClose, isOwner }) => {
 
   useEffect(() => {
     loadMembers();
-  }, [projectId]);
+  }, [projectId, projectOwner]);
 
   const loadMembers = async () => {
     try {
       const response = await api.get(`/projects/${projectId}/members`);
-      setMembers(response.data);
+      const membersList = response.data;
+      
+      // Adicionar o owner na lista se não estiver presente
+      if (projectOwner && !membersList.find(m => m.id === projectOwner.id)) {
+        setMembers([projectOwner, ...membersList]);
+      } else {
+        setMembers(membersList);
+      }
     } catch (error) {
       console.error('Erro ao carregar membros:', error);
     } finally {
@@ -93,22 +100,43 @@ const ProjectMembersModal = ({ projectId, onClose, isOwner }) => {
                   {isOwner && <small>Adicione membros pelo email acima.</small>}
                 </div>
               ) : (
-                members.map((member) => (
-                  <div key={member.id} className="member-item">
-                    <div className="member-info">
-                      <div className="member-name">{member.nickname || member.name}</div>
-                      <div className="member-email">{member.email}</div>
+                members.map((member) => {
+                  const isProjectOwner = projectOwner && member.id === projectOwner.id;
+                  return (
+                    <div key={member.id} className={`member-item ${isProjectOwner ? 'owner' : ''}`}>
+                      <div className="member-info">
+                        <div className="member-avatar-container">
+                          {member.avatar ? (
+                            <img 
+                              src={`http://localhost:5000${member.avatar}`} 
+                              alt={member.nickname || member.name}
+                              className="member-avatar"
+                            />
+                          ) : (
+                            <div className="member-avatar-initial">
+                              {(member.nickname || member.name)?.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="member-details">
+                          <div className="member-name">
+                            {member.nickname || member.name}
+                            {isProjectOwner && <span className="owner-badge">👑 Dono</span>}
+                          </div>
+                          <div className="member-email">{member.email}</div>
+                        </div>
+                      </div>
+                      {isOwner && !isProjectOwner && (
+                        <button
+                          onClick={() => handleRemoveMember(member.id)}
+                          className="btn btn-danger btn-sm"
+                        >
+                          Remover
+                        </button>
+                      )}
                     </div>
-                    {isOwner && (
-                      <button
-                        onClick={() => handleRemoveMember(member.id)}
-                        className="btn btn-danger btn-sm"
-                      >
-                        Remover
-                      </button>
-                    )}
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </>

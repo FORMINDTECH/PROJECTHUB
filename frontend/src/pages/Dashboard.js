@@ -69,10 +69,21 @@ const Dashboard = () => {
             <span className="user-name">Olá, {user?.nickname || user?.name}</span>
             <button 
               onClick={() => setShowProfileModal(true)} 
-              className="btn btn-secondary btn-sm"
+              className="btn btn-secondary btn-sm user-profile-btn"
               title="Meu Perfil"
             >
-              👤 Perfil
+              {user?.avatar ? (
+                <img 
+                  src={`http://localhost:5000${user.avatar}`} 
+                  alt={user?.nickname || user?.name}
+                  className="user-avatar-header"
+                />
+              ) : (
+                <div className="user-avatar-header-initial">
+                  {(user?.nickname || user?.name)?.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span>Perfil</span>
             </button>
             <button onClick={toggleTheme} className="btn btn-secondary btn-icon" title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}>
               {theme === 'dark' ? '☀️' : '🌙'}

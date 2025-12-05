@@ -103,6 +103,25 @@ const TaskModal = ({ onClose, onSave, task = null, initialStatus = null, members
                   </option>
                 ))}
               </select>
+              {assignedTo && (() => {
+                const selectedMember = members.find(m => m.id === parseInt(assignedTo));
+                return selectedMember ? (
+                  <div className="assigned-member-preview">
+                    {selectedMember.avatar ? (
+                      <img 
+                        src={`http://localhost:5000${selectedMember.avatar}`} 
+                        alt={selectedMember.nickname || selectedMember.name}
+                        className="member-avatar-preview"
+                      />
+                    ) : (
+                      <div className="member-initial-preview">
+                        {(selectedMember.nickname || selectedMember.name)?.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <span>{selectedMember.nickname || selectedMember.name}</span>
+                  </div>
+                ) : null;
+              })()}
             </div>
           )}
 

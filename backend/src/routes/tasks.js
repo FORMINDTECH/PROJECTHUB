@@ -38,7 +38,7 @@ router.get('/project/:projectId', auth, async (req, res) => {
       include: [{
         model: User,
         as: 'assignedTo',
-        attributes: ['id', 'name', 'email', 'nickname'],
+        attributes: ['id', 'name', 'email', 'nickname', 'avatar'],
         required: false
       }],
       order: [['order', 'ASC'], ['createdAt', 'DESC']]
@@ -71,18 +71,20 @@ router.post('/', [
       return res.status(404).json({ message: 'Projeto não encontrado' });
     }
 
-    // Contar tarefas no mesmo status para definir ordem
-    const count = await Task.count({
+    // Se status for null, criar como post-it (sem status)
+    // Caso contrário, contar tarefas no mesmo status para definir ordem
+    const status = req.body.status === null ? null : (req.body.status || 'todo');
+    const count = status === null ? 0 : await Task.count({
       where: {
         projectId: req.body.project,
-        status: req.body.status || 'todo',
+        status: status,
       }
     });
 
     const task = await Task.create({
       title: req.body.title,
       description: req.body.description,
-      status: req.body.status || 'todo',
+      status: status,
       projectId: req.body.project,
       order: count,
       assignedToId: req.body.assignedTo || null,
@@ -92,7 +94,7 @@ router.post('/', [
       include: [{
         model: User,
         as: 'assignedTo',
-        attributes: ['id', 'name', 'email', 'nickname'],
+        attributes: ['id', 'name', 'email', 'nickname', 'avatar'],
         required: false
       }]
     });
@@ -140,7 +142,7 @@ router.put('/:id', [
       include: [{
         model: User,
         as: 'assignedTo',
-        attributes: ['id', 'name', 'email', 'nickname'],
+        attributes: ['id', 'name', 'email', 'nickname', 'avatar'],
         required: false
       }]
     });
@@ -232,7 +234,7 @@ router.put('/:id/move', [
       include: [{
         model: User,
         as: 'assignedTo',
-        attributes: ['id', 'name', 'email', 'nickname'],
+        attributes: ['id', 'name', 'email', 'nickname', 'avatar'],
         required: false
       }]
     });

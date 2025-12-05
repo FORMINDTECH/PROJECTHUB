@@ -1,196 +1,291 @@
 /* Variáveis CSS para temas */
 :root[data-theme="dark"] {
   --bg-form: #1e293b;
-  --bg-form-expanded: rgba(15, 23, 42, 0.5);
   --bg-input: #0f172a;
   --border-color: #334155;
-  --border-hover: #475569;
   --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-tertiary: #64748b;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
   --shadow: rgba(0, 0, 0, 0.3);
   --accent-blue: #3b82f6;
-  --accent-blue-hover: #2563eb;
 }
 
 :root[data-theme="light"] {
   --bg-form: #ffffff;
-  --bg-form-expanded: #f8fafc;
   --bg-input: #ffffff;
   --border-color: #e2e8f0;
-  --border-hover: #cbd5e1;
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-tertiary: #64748b;
   --shadow: rgba(0, 0, 0, 0.1);
   --accent-blue: #3b82f6;
-  --accent-blue-hover: #2563eb;
 }
 
-.quick-task-form {
-  background: var(--bg-form);
-  border-radius: 12px;
+.postit-form-card {
+  background: linear-gradient(135deg, #ffeb3b 0%, #fff176 100%);
+  border: none;
+  border-radius: 2px;
   padding: 0;
-  box-shadow: 0 4px 6px var(--shadow);
-  margin-bottom: 20px;
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-  transition: all 0.3s ease;
-}
-
-.quick-task-header {
-  padding: 18px 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  transition: all 0.2s;
-  user-select: none;
-  background: transparent;
-}
-
-.quick-task-header:hover {
-  background-color: var(--bg-form-expanded);
-}
-
-.quick-task-header.expanded {
-  background-color: var(--bg-form-expanded);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.quick-task-icon {
-  font-size: 24px;
-  filter: grayscale(0.2);
-}
-
-.quick-task-title {
-  flex: 1;
-  font-weight: 600;
-  color: var(--text-primary);
-  font-size: 1rem;
-}
-
-.quick-task-arrow {
-  color: var(--text-secondary);
-  font-size: 12px;
-  transition: transform 0.2s;
-}
-
-.quick-task-content {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  background: var(--bg-form-expanded);
-}
-
-.quick-task-field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.quick-task-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 5px;
-}
-
-.quick-task-input,
-.quick-task-textarea {
-  width: 100%;
-  padding: 12px 16px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-family: inherit;
-  transition: all 0.2s;
-  background: var(--bg-input);
-  color: var(--text-primary);
-}
-
-.quick-task-input::placeholder,
-.quick-task-textarea::placeholder {
-  color: var(--text-tertiary);
-}
-
-.quick-task-input:focus,
-.quick-task-textarea:focus {
-  outline: none;
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.quick-task-textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.quick-task-columns {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.quick-task-column-btn {
-  padding: 12px 16px;
-  border: 2px solid;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: transparent;
-  text-align: left;
+  cursor: grab;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  user-select: none;
+  transform: rotate(-1.5deg);
+  margin-bottom: 20px;
+  min-height: 160px;
+  width: 100%;
+  max-width: 280px;
   overflow: hidden;
+  /* Efeito de textura de papel */
+  background-image: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.15) 2px,
+      rgba(255, 255, 255, 0.15) 4px
+    ),
+    linear-gradient(135deg, #ffeb3b 0%, #fff176 100%);
+  /* Efeito de sombra realista */
+  box-shadow: 
+    0 10px 25px rgba(0, 0, 0, 0.2),
+    0 3px 8px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
-.quick-task-column-btn::before {
+/* Linha de cola no topo (como post-its reais) */
+.postit-form-card::before {
   content: '';
   position: absolute;
-  left: 0;
   top: 0;
-  height: 100%;
-  width: 4px;
-  background: currentColor;
-  transform: scaleY(0);
-  transition: transform 0.2s;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.2) 30%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  z-index: 2;
 }
 
-.quick-task-column-btn:hover {
-  transform: translateX(5px);
-  box-shadow: 0 2px 8px var(--shadow);
-  background: rgba(59, 130, 246, 0.1);
+/* Efeito de iluminação e profundidade */
+.postit-form-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.3) 0%, transparent 40%),
+    radial-gradient(circle at 75% 75%, rgba(0, 0, 0, 0.03) 0%, transparent 40%);
+  pointer-events: none;
+  border-radius: 2px;
+  z-index: 1;
 }
 
-.quick-task-column-btn.active {
-  transform: translateX(5px);
-  box-shadow: 0 4px 12px var(--shadow);
+.postit-form-card.has-content {
+  cursor: grab;
 }
 
-.quick-task-column-btn.active::before {
-  transform: scaleY(1);
+.postit-form-card.dragging {
+  opacity: 0.3;
+  transform: rotate(-1.5deg);
+  z-index: 1;
 }
 
-.quick-task-actions {
+.postit-form-card:hover {
+  transform: rotate(-0.5deg) translateY(-3px);
+  box-shadow: 
+    0 12px 28px rgba(0, 0, 0, 0.25),
+    0 4px 10px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+[data-theme="dark"] .postit-form-card {
+  background: linear-gradient(135deg, #f9a825 0%, #f57f17 100%);
+  background-image: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.05) 2px,
+      rgba(255, 255, 255, 0.05) 4px
+    ),
+    linear-gradient(135deg, #f9a825 0%, #f57f17 100%);
+}
+
+.postit-form-header {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px 8px 14px;
+  padding-top: 14px;
+  position: relative;
+  z-index: 3;
+}
+
+.postit-form-icon {
+  font-size: 16px;
+}
+
+.postit-clear-btn {
+  padding: 2px 6px;
+  font-size: 18px;
+  line-height: 1;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.postit-clear-btn:hover {
+  opacity: 1;
+}
+
+.postit-form-content {
+  padding: 0 14px 12px 14px;
+  position: relative;
+  z-index: 3;
+}
+
+.postit-writing-area {
+  position: relative;
+}
+
+.postit-lines {
+  position: relative;
+  min-height: 100px;
+}
+
+/* Linhas do post-it */
+.postit-lines::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 23px,
+    rgba(0, 0, 0, 0.08) 23px,
+    rgba(0, 0, 0, 0.08) 24px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.postit-line-input,
+.postit-line-textarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: 'Segoe UI', 'Comic Sans MS', 'Kalam', 'Caveat', cursive, sans-serif;
+  font-size: 0.85rem;
+  color: #1a1a1a;
+  padding: 0;
+  margin: 0;
+  resize: none;
+  outline: none;
+  position: relative;
+  z-index: 2;
+  line-height: 24px;
+  min-height: 24px;
+  box-shadow: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.postit-line-input {
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.2px;
+}
+
+.postit-line-input:focus,
+.postit-line-textarea:focus {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.postit-line-textarea {
+  margin-top: 4px;
+  font-weight: 400;
+  font-size: 0.8rem;
+  min-height: 80px;
+  letter-spacing: 0.1px;
+}
+
+.postit-line-input::placeholder,
+.postit-line-textarea::placeholder {
+  color: rgba(0, 0, 0, 0.3);
+  opacity: 0.6;
+  font-style: italic;
+}
+
+[data-theme="dark"] .postit-line-input,
+[data-theme="dark"] .postit-line-textarea {
+  color: #0a0a0a;
+}
+
+[data-theme="dark"] .postit-line-input::placeholder,
+[data-theme="dark"] .postit-line-textarea::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.postit-line {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 8px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.postit-form-hint {
   margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.15);
+  text-align: center;
+  position: relative;
 }
 
-/* Botões usam classes padronizadas do buttons.css */
-.quick-task-actions .btn {
-  flex: 1;
+.postit-form-hint::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.4);
 }
 
-.quick-task-submit:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-  background: var(--accent-blue-hover);
+.postit-form-hint small {
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 0.7rem;
 }
 
-.quick-task-submit:active {
-  transform: translateY(0);
+[data-theme="dark"] .postit-form-hint small {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.postit-form-card.dragging-overlay {
+  opacity: 1 !important;
+  transform: rotate(3deg) scale(1.08) !important;
+  z-index: 10000 !important;
+  cursor: grabbing !important;
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.4),
+    0 10px 20px rgba(0, 0, 0, 0.3),
+    0 5px 10px rgba(0, 0, 0, 0.2) !important;
+  pointer-events: none;
+  will-change: transform;
+  transition: none !important;
+  position: relative;
+  margin: 0;
+  max-width: 280px;
 }
