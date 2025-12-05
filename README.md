@@ -4,12 +4,70 @@ Sistema completo de gerenciamento de projetos e tarefas estilo Kanban, desenvolv
 
 ## 📋 Sobre o Projeto
 
-O **ProjectHub** é uma aplicação web full-stack que permite:
-- Gerenciar múltiplos projetos
-- Organizar tarefas em colunas Kanban (A Fazer, Em Progresso, Concluído)
-- Personalizar projetos com cores e logos
-- Arrastar e soltar tarefas entre colunas
-- Acompanhar o progresso visualmente
+O **ProjectHub** é uma aplicação web full-stack completa para gerenciamento de projetos e tarefas estilo Kanban, desenvolvida para equipes colaborarem de forma eficiente e visual.
+
+### ✨ Funcionalidades Principais
+
+- 🎯 **Gerenciamento de Projetos**
+  - Criar e gerenciar múltiplos projetos
+  - Personalizar projetos com cores, logos e descrições
+  - Editar informações do projeto
+  - Dashboard com estatísticas e filtros
+
+- 📋 **Sistema Kanban**
+  - Organizar tarefas em colunas (A Fazer, Em Progresso, Concluído)
+  - Arrastar e soltar tarefas entre colunas
+  - Criar tarefas através de post-its draggables
+  - Atribuir tarefas a membros do projeto
+  - Visualizar progresso com barras de conclusão
+
+- 👥 **Colaboração em Equipe**
+  - Sistema de convites para projetos
+  - Gerenciar membros do projeto
+  - Perfis de usuário com avatares e nicknames
+  - Visualizar membros e suas atribuições
+
+- 🎨 **Interface Moderna**
+  - Modo escuro e claro
+  - Animações suaves e transições
+  - Design responsivo e intuitivo
+  - Cards informativos com estatísticas
+  - Busca e filtros avançados
+
+- 👤 **Perfil do Usuário**
+  - Editar informações pessoais
+  - Trocar email e senha
+  - Upload de foto de perfil
+  - Definir nickname para exibição
+
+---
+
+## 🆕 Principais Funcionalidades
+
+### 🎨 Interface e Experiência do Usuário
+- **Modo Escuro/Claro**: Alternância suave entre temas com persistência
+- **Animações Suaves**: Transições e efeitos visuais em toda a aplicação
+- **Dashboard Informativo**: Estatísticas, filtros e busca de projetos
+- **Cards de Projeto**: Informações detalhadas (tarefas, membros, progresso, última atividade)
+- **Design Responsivo**: Interface adaptável para diferentes tamanhos de tela
+
+### 📋 Gerenciamento de Tarefas
+- **Post-its Draggables**: Crie tarefas arrastando post-its realistas para as colunas
+- **Drag and Drop**: Arraste tarefas entre colunas com feedback visual
+- **Atribuição de Tarefas**: Associe tarefas a membros do projeto
+- **Status Flexível**: Tarefas podem ser criadas sem status inicial (post-its)
+- **Barra de Progresso**: Visualize o progresso de conclusão por projeto
+
+### 👥 Colaboração
+- **Sistema de Convites**: Envie convites por email para adicionar membros
+- **Gerenciamento de Membros**: Visualize e remova membros do projeto
+- **Perfis de Usuário**: Avatares, nicknames e informações personalizáveis
+- **Controle de Acesso**: Apenas o dono pode editar/remover projetos e membros
+
+### ⚙️ Personalização
+- **Perfil Completo**: Edite nome, nickname, email, senha e avatar
+- **Projetos Customizáveis**: Cores, logos, nomes e descrições
+- **Temas Visuais**: Cores profissionais e consistentes em todo o sistema
 
 ---
 
@@ -31,9 +89,11 @@ O **ProjectHub** é uma aplicação web full-stack que permite:
 - **React** (v18) - Biblioteca JavaScript para construção de interfaces
 - **React Router DOM** - Roteamento e navegação
 - **Axios** - Cliente HTTP para comunicação com a API
-- **react-beautiful-dnd** - Biblioteca para drag and drop
-- **Context API** - Gerenciamento de estado global (autenticação)
-- **CSS3** - Estilização moderna e responsiva
+- **@dnd-kit/core** - Biblioteca moderna para drag and drop
+- **@dnd-kit/sortable** - Componentes sortable para drag and drop
+- **@dnd-kit/utilities** - Utilitários para drag and drop
+- **Context API** - Gerenciamento de estado global (autenticação e tema)
+- **CSS3** - Estilização moderna e responsiva com animações
 
 ---
 
@@ -43,21 +103,23 @@ O **ProjectHub** é uma aplicação web full-stack que permite:
 PROJECTHUB/
 ├── backend/
 │   ├── src/
-│   │   ├── models/          # Modelos Sequelize (User, Project, Task)
-│   │   ├── routes/          # Rotas da API REST
-│   │   ├── middleware/      # Middlewares (auth, upload)
+│   │   ├── models/          # Modelos Sequelize (User, Project, Task, ProjectMember, ProjectInvite)
+│   │   ├── routes/          # Rotas da API REST (auth, projects, tasks, invites)
+│   │   ├── middleware/      # Middlewares (auth, upload, uploadAvatar)
 │   │   ├── config/          # Configurações do banco
 │   │   └── server.js        # Servidor Express principal
-│   ├── uploads/             # Diretório para imagens enviadas
+│   ├── migrations/          # Scripts SQL de migração
+│   ├── uploads/             # Diretório para imagens enviadas (logos e avatares)
 │   ├── env.example          # Exemplo de variáveis de ambiente
 │   └── package.json         # Dependências do backend
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── components/      # Componentes reutilizáveis
-│   │   ├── pages/           # Páginas da aplicação
+│   │   ├── components/      # Componentes reutilizáveis (modais, cards, forms)
+│   │   ├── pages/           # Páginas da aplicação (Dashboard, Login, Register, ProjectBoard)
 │   │   ├── services/        # Serviços de API
-│   │   ├── context/         # Context API (AuthContext)
+│   │   ├── context/         # Context API (AuthContext, ThemeContext)
+│   │   ├── styles/          # Estilos globais (buttons.css)
 │   │   └── App.js           # Componente raiz
 │   ├── public/              # Arquivos estáticos
 │   └── package.json         # Dependências do frontend
@@ -193,6 +255,16 @@ NODE_ENV=development
 
 **💡 Dica:** O Sequelize criará automaticamente as tabelas na primeira execução!
 
+**📝 Migrações Disponíveis:**
+
+O projeto inclui scripts de migração SQL para adicionar funcionalidades:
+- `add_nickname_and_project_members.sql` - Adiciona campo nickname e tabela project_members
+- `add_avatar_column.sql` - Adiciona campo avatar aos usuários
+- `allow_null_status.sql` - Permite status null nas tarefas (para post-its)
+- `create_project_invites.sql` - Cria tabela de convites de projeto
+
+Execute as migrações conforme necessário usando os scripts em `backend/migrations/`.
+
 ### 2.4 Testar o Backend
 
 ```bash
@@ -269,24 +341,42 @@ Após seguir todos os passos, você deve ter:
    - Preencha: Nome, Email e Senha
    - Clique em "Criar Conta"
 
-2. **Criar Primeiro Projeto**
-   - Após fazer login, clique em "+ Novo Projeto"
+2. **Configurar Perfil**
+   - Clique no botão "Perfil" no canto superior direito
+   - Adicione uma foto de perfil (opcional)
+   - Defina um nickname (será exibido ao atribuir tarefas)
+   - Salve as alterações
+
+3. **Criar Primeiro Projeto**
+   - No Dashboard, clique em "+ Novo Projeto"
    - Preencha o nome do projeto
    - Escolha uma cor
-   - (Opcional) Adicione uma descrição
+   - (Opcional) Adicione uma descrição e logo
    - Clique em "Salvar"
 
-3. **Adicionar Tarefas**
-   - Clique no projeto criado
-   - Clique em "+ Nova Tarefa"
-   - Preencha o título
-   - (Opcional) Adicione descrição
-   - Escolha o status inicial
-   - Clique em "Salvar"
+4. **Adicionar Membros ao Projeto**
+   - Abra o projeto criado
+   - Clique em "Membros"
+   - Digite o email do usuário que deseja convidar
+   - Clique em "Enviar Convite"
+   - O usuário receberá uma notificação e poderá aceitar ou recusar
 
-4. **Mover Tarefas**
-   - Arraste e solte tarefas entre as colunas
-   - A ordem é salva automaticamente
+5. **Criar Tarefas**
+   - No board do projeto, use o post-it amarelo na barra lateral esquerda
+   - Digite o título e descrição diretamente no post-it
+   - Arraste o post-it para uma das colunas (A Fazer, Em Progresso, Concluído)
+   - A tarefa será criada automaticamente
+
+6. **Gerenciar Tarefas**
+   - Arraste e solte tarefas entre colunas para mudar o status
+   - Clique no botão de editar (✏️) para atribuir a tarefa a um membro
+   - Clique no botão de excluir (×) para remover a tarefa
+   - Visualize o progresso através da barra de conclusão no card do projeto
+
+7. **Personalizar Projeto**
+   - Clique em "Editar Projeto" (visível apenas para o dono)
+   - Altere nome, descrição, cor ou logo
+   - Salve as alterações
 
 ---
 
@@ -296,19 +386,35 @@ Após seguir todos os passos, você deve ter:
 - `POST /api/auth/register` - Registrar novo usuário
 - `POST /api/auth/login` - Fazer login
 - `GET /api/auth/me` - Obter usuário atual (requer autenticação)
+- `PUT /api/auth/profile` - Atualizar perfil (nome, nickname)
+- `PUT /api/auth/change-email` - Trocar email
+- `PUT /api/auth/change-password` - Trocar senha
+- `POST /api/auth/avatar` - Upload de avatar
+- `DELETE /api/auth/avatar` - Remover avatar
 
 ### Projetos
-- `GET /api/projects` - Listar projetos do usuário
+- `GET /api/projects` - Listar projetos do usuário (com estatísticas)
 - `GET /api/projects/:id` - Obter projeto específico
 - `POST /api/projects` - Criar novo projeto
-- `PUT /api/projects/:id` - Atualizar projeto
+- `PUT /api/projects/:id` - Atualizar projeto (nome, descrição, cor)
 - `DELETE /api/projects/:id` - Deletar projeto
 - `POST /api/projects/:id/logo` - Upload de logo do projeto
+- `DELETE /api/projects/:id/logo` - Remover logo do projeto
+
+### Membros do Projeto
+- `GET /api/projects/:id/members` - Listar membros do projeto
+- `DELETE /api/projects/:id/members/:userId` - Remover membro do projeto
+
+### Convites
+- `GET /api/invites` - Listar convites pendentes do usuário
+- `POST /api/invites/:id/accept` - Aceitar convite
+- `POST /api/invites/:id/decline` - Recusar convite
+- `POST /api/projects/:id/invites` - Enviar convite para projeto
 
 ### Tarefas
 - `GET /api/tasks/project/:projectId` - Listar tarefas de um projeto
-- `POST /api/tasks` - Criar nova tarefa
-- `PUT /api/tasks/:id` - Atualizar tarefa
+- `POST /api/tasks` - Criar nova tarefa (permite status null para post-its)
+- `PUT /api/tasks/:id` - Atualizar tarefa (incluindo assignedToId)
 - `PUT /api/tasks/:id/move` - Mover tarefa (drag and drop)
 - `DELETE /api/tasks/:id` - Deletar tarefa
 
@@ -320,8 +426,17 @@ Após seguir todos os passos, você deve ter:
 
 ```env
 PORT=5000
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/kanban?retryWrites=true&w=majority
+
+# MySQL Database Configuration
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=kanban
+DB_USER=kanban_user
+DB_PASSWORD=sua_senha_aqui
+
+# JWT Secret - Use uma string aleatória e segura
 JWT_SECRET=sua_chave_secreta_jwt_aqui
+
 NODE_ENV=development
 ```
 
@@ -594,9 +709,9 @@ pm2 startup
    - Gere com: `openssl rand -base64 32`
 
 3. **Acesso de Rede**
-   - Em produção, restrinja IPs no MongoDB Atlas
+   - Em produção, configure firewall/security groups no MySQL
    - Adicione apenas IPs do servidor de produção
-   - Remova `0.0.0.0/0` em produção
+   - Use SSL para conexões seguras
 
 4. **Usuários do Banco**
    - Crie usuários separados para dev e prod
@@ -604,14 +719,16 @@ pm2 startup
    - Revise permissões periodicamente
 
 5. **Backups**
-   - Configure backups automáticos no Atlas
+   - Configure backups automáticos no MySQL
    - Teste restauração periodicamente
    - Mantenha backups em local seguro
+   - Configure retenção de backups adequada
 
 6. **Monitoramento**
-   - Configure alertas no MongoDB Atlas
+   - Configure alertas no serviço MySQL
    - Monitore performance e uso
    - Configure logs de erro
+   - Monitore espaço em disco
 
 7. **HTTPS**
    - Use certificado SSL em produção
@@ -626,6 +743,7 @@ Antes de fazer deploy em produção, verifique:
 - [ ] Variáveis de ambiente configuradas no servidor
 - [ ] JWT_SECRET diferente do desenvolvimento
 - [ ] Acesso de rede restrito no MySQL (firewall/security groups)
+- [ ] Migrações do banco de dados executadas
 - [ ] Usuário do banco criado especificamente para produção
 - [ ] Backups configurados no MySQL
 - [ ] Conexão SSL configurada para MySQL
@@ -673,6 +791,7 @@ SELECT * FROM tasks;
 ```bash
 npm start          # Inicia o servidor em produção
 npm run dev        # Inicia o servidor em desenvolvimento (com nodemon)
+npm run migrate    # Executa migrações do banco de dados
 ```
 
 ### Frontend
@@ -683,14 +802,44 @@ npm run build      # Cria build de produção
 npm test           # Executa testes
 ```
 
+## 📝 Notas de Versão
+
+### Versão Atual - Funcionalidades Implementadas
+
+- ✅ Sistema completo de autenticação com JWT
+- ✅ Gerenciamento de projetos com personalização
+- ✅ Sistema Kanban com drag and drop moderno (@dnd-kit)
+- ✅ Post-its draggables para criação rápida de tarefas
+- ✅ Sistema de convites para colaboração
+- ✅ Perfis de usuário completos com avatares
+- ✅ Modo escuro/claro com persistência
+- ✅ Dashboard com estatísticas e filtros
+- ✅ Atribuição de tarefas a membros
+- ✅ Interface moderna com animações suaves
+- ✅ Modais customizados (Success, Error, Confirm)
+- ✅ Upload de imagens (logos e avatares)
+- ✅ Busca e filtros avançados no dashboard
+
 ---
 
 ## 📚 Recursos Adicionais
 
+### Documentação das Tecnologias
 - [Documentação MySQL](https://dev.mysql.com/doc/)
 - [Documentação Sequelize](https://sequelize.org/)
 - [Documentação Express.js](https://expressjs.com/)
 - [Documentação React](https://react.dev/)
+- [Documentação @dnd-kit](https://docs.dndkit.com/)
+
+### Estrutura do Banco de Dados
+
+O banco de dados MySQL contém as seguintes tabelas principais:
+
+- **users**: Usuários do sistema (id, name, email, password, nickname, avatar)
+- **projects**: Projetos criados (id, name, description, color, logo, owner_id)
+- **tasks**: Tarefas dos projetos (id, title, description, status, order, project_id, assigned_to_id)
+- **project_members**: Relacionamento muitos-para-muitos entre usuários e projetos
+- **project_invites**: Convites pendentes para projetos (id, project_id, user_id, inviter_id, status)
 
 ---
 
