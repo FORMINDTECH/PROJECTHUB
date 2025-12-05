@@ -4,7 +4,7 @@ import './ProjectCard.css';
 const ProjectCard = ({ project, onClick, onDelete }) => {
   const handleDelete = (e) => {
     e.stopPropagation();
-    onDelete(project._id);
+    onDelete(project.id);
   };
 
   return (

@@ -1,30 +1,46 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const projectSchema = new mongoose.Schema({
+const Project = sequelize.define('Project', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
   name: {
-    type: String,
-    required: [true, 'Nome do projeto é obrigatório'],
-    trim: true,
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notEmpty: {
+        msg: 'Nome do projeto é obrigatório'
+      }
+    }
   },
   description: {
-    type: String,
-    trim: true,
+    type: DataTypes.TEXT,
+    allowNull: true
   },
   color: {
-    type: String,
-    default: '#6366f1', // Cor padrão (índigo)
+    type: DataTypes.STRING,
+    defaultValue: '#6366f1',
+    allowNull: false
   },
   logo: {
-    type: String, // Caminho da imagem
+    type: DataTypes.STRING,
+    allowNull: true
   },
-  owner: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-  },
+  ownerId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    },
+    field: 'owner_id'
+  }
 }, {
-  timestamps: true,
+  tableName: 'projects',
+  timestamps: true
 });
 
-module.exports = mongoose.model('Project', projectSchema);
-
+module.exports = Project;

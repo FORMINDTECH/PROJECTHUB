@@ -57,7 +57,7 @@ const ProjectBoard = () => {
       return;
     }
 
-    const task = tasks.find((t) => t._id === draggableId);
+    const task = tasks.find((t) => t.id === draggableId);
     if (!task) return;
 
     const newStatus = destination.droppableId;
@@ -81,7 +81,7 @@ const ProjectBoard = () => {
 
     // Atualizar no backend
     try {
-      await api.put(`/tasks/${draggableId}/move`, {
+      await api.put(`/tasks/${task.id}/move`, {
         status: newStatus,
         order: newOrder,
       });
@@ -208,8 +208,8 @@ const ProjectBoard = () => {
                     >
                       {columnTasks.map((task, index) => (
                         <Draggable
-                          key={task._id}
-                          draggableId={task._id}
+                          key={task.id}
+                          draggableId={String(task.id)}
                           index={index}
                         >
                           {(provided, snapshot) => (
@@ -231,7 +231,7 @@ const ProjectBoard = () => {
                                   className="btn-delete-task"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleDeleteTask(task._id);
+                                    handleDeleteTask(task.id);
                                   }}
                                 >
                                   ×

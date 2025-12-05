@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const Task = require('../models/Task');
-const Project = require('../models/Project');
+const { Task, Project, User } = require('../models');
 const auth = require('../middleware/auth');
+const { Op } = require('sequelize');
 
 // @route   GET /api/tasks/project/:projectId
 // @desc    Listar tarefas de um projeto
@@ -12,17 +12,26 @@ router.get('/project/:projectId', auth, async (req, res) => {
   try {
     // Verificar se o projeto pertence ao usuário
     const project = await Project.findOne({
-      _id: req.params.projectId,
-      owner: req.user._id,
+      where: {
+        id: req.params.projectId,
+        ownerId: req.user.id,
+      }
     });
 
     if (!project) {
       return res.status(404).json({ message: 'Projeto não encontrado' });
     }
 
-    const tasks = await Task.find({ project: req.params.projectId })
-      .populate('assignedTo', 'name email')
-      .sort({ order: 1, createdAt: -1 });
+    const tasks = await Task.findAll({
+      where: { projectId: req.params.projectId },
+      include: [{
+        model: User,
+        as: 'assignedTo',
+        attributes: ['id', 'name', 'email'],
+        required: false
+      }],
+      order: [['order', 'ASC'], ['createdAt', 'DESC']]
+    });
 
     res.json(tasks);
   } catch (error) {
@@ -47,8 +56,10 @@ router.post('/', [
 
     // Verificar se o projeto pertence ao usuário
     const project = await Project.findOne({
-      _id: req.body.project,
-      owner: req.user._id,
+      where: {
+        id: req.body.project,
+        ownerId: req.user.id,
+      }
     });
 
     if (!project) {
@@ -56,22 +67,30 @@ router.post('/', [
     }
 
     // Contar tarefas no mesmo status para definir ordem
-    const count = await Task.countDocuments({
-      project: req.body.project,
-      status: req.body.status || 'todo',
+    const count = await Task.count({
+      where: {
+        projectId: req.body.project,
+        status: req.body.status || 'todo',
+      }
     });
 
-    const task = new Task({
+    const task = await Task.create({
       title: req.body.title,
       description: req.body.description,
       status: req.body.status || 'todo',
-      project: req.body.project,
+      projectId: req.body.project,
       order: count,
-      assignedTo: req.body.assignedTo,
+      assignedToId: req.body.assignedTo || null,
     });
 
-    await task.save();
-    await task.populate('assignedTo', 'name email');
+    await task.reload({
+      include: [{
+        model: User,
+        as: 'assignedTo',
+        attributes: ['id', 'name', 'email'],
+        required: false
+      }]
+    });
 
     res.status(201).json(task);
   } catch (error) {
@@ -93,15 +112,17 @@ router.put('/:id', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findByPk(req.params.id);
     if (!task) {
       return res.status(404).json({ message: 'Tarefa não encontrada' });
     }
 
     // Verificar se o projeto pertence ao usuário
     const project = await Project.findOne({
-      _id: task.project,
-      owner: req.user._id,
+      where: {
+        id: task.projectId,
+        ownerId: req.user.id,
+      }
     });
 
     if (!project) {
@@ -113,10 +134,17 @@ router.put('/:id', [
     if (description !== undefined) task.description = description;
     if (status) task.status = status;
     if (order !== undefined) task.order = order;
-    if (assignedTo !== undefined) task.assignedTo = assignedTo;
+    if (assignedTo !== undefined) task.assignedToId = assignedTo;
 
     await task.save();
-    await task.populate('assignedTo', 'name email');
+    await task.reload({
+      include: [{
+        model: User,
+        as: 'assignedTo',
+        attributes: ['id', 'name', 'email'],
+        required: false
+      }]
+    });
 
     res.json(task);
   } catch (error) {
@@ -139,15 +167,17 @@ router.put('/:id/move', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findByPk(req.params.id);
     if (!task) {
       return res.status(404).json({ message: 'Tarefa não encontrada' });
     }
 
     // Verificar se o projeto pertence ao usuário
     const project = await Project.findOne({
-      _id: task.project,
-      owner: req.user._id,
+      where: {
+        id: task.projectId,
+        ownerId: req.user.id,
+      }
     });
 
     if (!project) {
@@ -155,58 +185,64 @@ router.put('/:id/move', [
     }
 
     const { status, order } = req.body;
+    const oldStatus = task.status;
+    const oldOrder = task.order;
 
     // Se mudou de coluna, atualizar ordens das outras tarefas
     if (task.status !== status) {
       // Aumentar ordem das tarefas na nova coluna que estão na posição ou depois
-      await Task.updateMany(
-        {
-          project: task.project,
+      await Task.increment('order', {
+        by: 1,
+        where: {
+          projectId: task.projectId,
           status: status,
-          order: { $gte: order },
-        },
-        { $inc: { order: 1 } }
-      );
+          order: { [Op.gte]: order }
+        }
+      });
 
       // Diminuir ordem das tarefas na coluna antiga que estavam depois
-      await Task.updateMany(
-        {
-          project: task.project,
-          status: task.status,
-          order: { $gt: task.order },
-        },
-        { $inc: { order: -1 } }
-      );
+      await Task.decrement('order', {
+        by: 1,
+        where: {
+          projectId: task.projectId,
+          status: oldStatus,
+          order: { [Op.gt]: oldOrder }
+        }
+      });
     } else {
       // Mesma coluna, apenas reordenar
-      const oldOrder = task.order;
-      const newOrder = order;
-
-      if (oldOrder < newOrder) {
-        await Task.updateMany(
-          {
-            project: task.project,
+      if (oldOrder < order) {
+        await Task.decrement('order', {
+          by: 1,
+          where: {
+            projectId: task.projectId,
             status: status,
-            order: { $gt: oldOrder, $lte: newOrder },
-          },
-          { $inc: { order: -1 } }
-        );
-      } else if (oldOrder > newOrder) {
-        await Task.updateMany(
-          {
-            project: task.project,
+            order: { [Op.gt]: oldOrder, [Op.lte]: order }
+          }
+        });
+      } else if (oldOrder > order) {
+        await Task.increment('order', {
+          by: 1,
+          where: {
+            projectId: task.projectId,
             status: status,
-            order: { $gte: newOrder, $lt: oldOrder },
-          },
-          { $inc: { order: 1 } }
-        );
+            order: { [Op.gte]: order, [Op.lt]: oldOrder }
+          }
+        });
       }
     }
 
     task.status = status;
     task.order = order;
     await task.save();
-    await task.populate('assignedTo', 'name email');
+    await task.reload({
+      include: [{
+        model: User,
+        as: 'assignedTo',
+        attributes: ['id', 'name', 'email'],
+        required: false
+      }]
+    });
 
     res.json(task);
   } catch (error) {
@@ -220,15 +256,17 @@ router.put('/:id/move', [
 // @access  Private
 router.delete('/:id', auth, async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findByPk(req.params.id);
     if (!task) {
       return res.status(404).json({ message: 'Tarefa não encontrada' });
     }
 
     // Verificar se o projeto pertence ao usuário
     const project = await Project.findOne({
-      _id: task.project,
-      owner: req.user._id,
+      where: {
+        id: task.projectId,
+        ownerId: req.user.id,
+      }
     });
 
     if (!project) {
@@ -236,16 +274,16 @@ router.delete('/:id', auth, async (req, res) => {
     }
 
     // Ajustar ordem das tarefas restantes
-    await Task.updateMany(
-      {
-        project: task.project,
+    await Task.decrement('order', {
+      by: 1,
+      where: {
+        projectId: task.projectId,
         status: task.status,
-        order: { $gt: task.order },
-      },
-      { $inc: { order: -1 } }
-    );
+        order: { [Op.gt]: task.order }
+      }
+    });
 
-    await Task.deleteOne({ _id: task._id });
+    await task.destroy();
 
     res.json({ message: 'Tarefa deletada com sucesso' });
   } catch (error) {
@@ -255,4 +293,3 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 module.exports = router;
-

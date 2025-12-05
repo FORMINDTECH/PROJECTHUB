@@ -50,7 +50,7 @@ const Dashboard = () => {
 
     try {
       await api.delete(`/projects/${id}`);
-      setProjects(projects.filter((p) => p._id !== id));
+      setProjects(projects.filter((p) => p.id !== id));
     } catch (error) {
       alert('Erro ao deletar projeto');
     }
@@ -98,10 +98,10 @@ const Dashboard = () => {
             <div className="projects-grid">
               {projects.map((project) => (
                 <ProjectCard
-                  key={project._id}
+                  key={project.id}
                   project={project}
                   onDelete={handleDeleteProject}
-                  onClick={() => navigate(`/project/${project._id}`)}
+                  onClick={() => navigate(`/project/${project.id}`)}
                 />
               ))}
             </div>

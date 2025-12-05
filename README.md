@@ -18,8 +18,8 @@ O **ProjectHub** é uma aplicação web full-stack que permite:
 ### Backend
 - **Node.js** (v14+) - Runtime JavaScript server-side
 - **Express.js** - Framework web minimalista e flexível para Node.js
-- **MongoDB Atlas** - Banco de dados NoSQL em nuvem (gratuito)
-- **Mongoose** - ODM (Object Data Modeling) para MongoDB
+- **MySQL** - Banco de dados relacional
+- **Sequelize** - ORM (Object-Relational Mapping) para MySQL
 - **JSON Web Token (JWT)** - Autenticação segura e stateless
 - **bcryptjs** - Biblioteca para hash de senhas
 - **Multer** - Middleware para upload de arquivos/imagens
@@ -43,14 +43,13 @@ O **ProjectHub** é uma aplicação web full-stack que permite:
 PROJECTHUB/
 ├── backend/
 │   ├── src/
-│   │   ├── models/          # Modelos do MongoDB (User, Project, Task)
+│   │   ├── models/          # Modelos Sequelize (User, Project, Task)
 │   │   ├── routes/          # Rotas da API REST
 │   │   ├── middleware/      # Middlewares (auth, upload)
 │   │   ├── config/          # Configurações do banco
 │   │   └── server.js        # Servidor Express principal
 │   ├── uploads/             # Diretório para imagens enviadas
 │   ├── env.example          # Exemplo de variáveis de ambiente
-│   ├── configure-mongodb.sh # Script auxiliar de configuração
 │   └── package.json         # Dependências do backend
 │
 ├── frontend/
@@ -83,8 +82,9 @@ Antes de começar, certifique-se de ter instalado:
   - Verificar: `npm --version`
 - **Git** (para clonar o repositório)
   - Download: https://git-scm.com/
-- **Conta no MongoDB Atlas** (gratuita)
-  - Criar em: https://www.mongodb.com/cloud/atlas/register
+- **MySQL** (local ou serviço cloud)
+  - Download local: https://dev.mysql.com/downloads/mysql/
+  - Ou use serviços cloud: AWS RDS, PlanetScale, Railway, etc.
 
 ---
 
@@ -122,84 +122,44 @@ cp env.example .env
 # (não commite este arquivo - ele contém informações sensíveis)
 ```
 
-### 2.3 Configurar MongoDB Atlas
+### 2.3 Configurar MySQL
 
-**⚠️ IMPORTANTE:** Você precisa ter acesso ao MongoDB Atlas da empresa ou criar sua própria conta.
+**⚠️ IMPORTANTE:** Você precisa ter MySQL instalado localmente ou acesso a um serviço MySQL (cloud ou servidor da empresa).
 
-#### Opção A: Usar MongoDB Atlas da Empresa
+#### Opção A: MySQL Local (Recomendado para desenvolvimento)
 
-Se a empresa já tem um cluster configurado, peça as credenciais ao líder técnico:
-- Username do banco de dados
-- Password do banco de dados
-- String de conexão completa
+**1. Instalar MySQL**
+   - **Windows**: Baixe o instalador em https://dev.mysql.com/downloads/mysql/
+   - **Mac**: `brew install mysql` ou baixe o instalador
+   - **Linux**: `sudo apt-get install mysql-server` (Ubuntu/Debian)
 
-#### Opção B: Criar Sua Própria Conta (Recomendado para desenvolvimento)
+**2. Iniciar MySQL**
+   - **Windows**: O MySQL geralmente inicia automaticamente como serviço
+   - **Mac/Linux**: `sudo systemctl start mysql` ou `brew services start mysql`
 
-Siga estes passos detalhados:
+**3. Criar Banco de Dados**
+   ```sql
+   mysql -u root -p
+   CREATE DATABASE kanban CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   CREATE USER 'kanban_user'@'localhost' IDENTIFIED BY 'sua_senha_aqui';
+   GRANT ALL PRIVILEGES ON kanban.* TO 'kanban_user'@'localhost';
+   FLUSH PRIVILEGES;
+   EXIT;
+   ```
 
-**1. Criar Conta no MongoDB Atlas**
-   - Acesse: https://www.mongodb.com/cloud/atlas/register
-   - Crie uma conta gratuita (plano FREE é suficiente)
+**4. Configurar no Arquivo .env**
 
-**2. Criar um Cluster**
-   - Após fazer login, clique em **"Build a Database"**
-   - Escolha o plano **FREE (M0)**
-   - Selecione uma região próxima (ex: São Paulo)
-   - Clique em **"Create"**
-   - Aguarde alguns minutos enquanto o cluster é criado
-
-**3. Configurar Acesso de Rede**
-   - No menu lateral, clique em **"Network Access"**
-   - Clique em **"Add IP Address"**
-   - Para desenvolvimento, adicione `0.0.0.0/0` (permite acesso de qualquer lugar)
-   - Ou adicione seu IP específico para mais segurança
-   - Clique em **"Confirm"**
-
-**4. Criar Usuário do Banco de Dados**
-   - No menu lateral, clique em **"Database Access"**
-   - Clique em **"Add New Database User"**
-   - Escolha **"Password"** como método de autenticação
-   - Crie um username (ex: `dev_user`)
-   - Crie uma senha forte (anote em local seguro!)
-   - Em **"Database User Privileges"**, escolha **"Read and write to any database"**
-   - Clique em **"Add User"**
-
-**5. Obter String de Conexão**
-   - Volte para o dashboard e clique em **"Connect"** no seu cluster
-   - Escolha **"Connect your application"**
-   - Você verá uma string como esta:
-     ```
-     mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
-     ```
-   - **⚠️ ATENÇÃO:** Os símbolos `< >` são placeholders! Você precisa substituir:
-     - `<username>` pelo username que você criou (SEM os símbolos `<>`)
-     - `<password>` pela senha que você criou (SEM os símbolos `<>`)
-   - Adicione o nome do banco `/kanban` ANTES do `?`
-   
-   **Exemplo:**
-   - Se você criou: username=`dev_user`, password=`MinhaSenh@123`
-   - Cluster: `cluster0.abc123.mongodb.net`
-   - String final:
-     ```
-     mongodb+srv://dev_user:MinhaSenh@123@cluster0.abc123.mongodb.net/kanban?retryWrites=true&w=majority
-     ```
-   
-   **⚠️ Se sua senha tiver caracteres especiais** (`@`, `#`, `:`, `/`, `*`), você precisa codificá-los:
-   - `@` → `%40`
-   - `#` → `%23`
-   - `:` → `%3A`
-   - `/` → `%2F`
-   - `*` → `%2A`
-
-**6. Configurar no Arquivo .env**
-
-Abra o arquivo `backend/.env` e configure assim:
+Abra o arquivo `backend/.env` e configure:
 
 ```env
 PORT=5000
 
-# MongoDB Atlas - Cole a string completa aqui
-MONGODB_URI=mongodb+srv://seu_username:sua_senha@cluster0.xxxxx.mongodb.net/kanban?retryWrites=true&w=majority
+# MySQL Database Configuration
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=kanban
+DB_USER=kanban_user
+DB_PASSWORD=sua_senha_aqui
 
 # JWT Secret - Use uma string aleatória e segura
 JWT_SECRET=seu_jwt_secret_super_seguro_aqui_mude_em_producao
@@ -207,13 +167,31 @@ JWT_SECRET=seu_jwt_secret_super_seguro_aqui_mude_em_producao
 NODE_ENV=development
 ```
 
-**Exemplo completo:**
+#### Opção B: MySQL Cloud (Recomendado para produção)
+
+Você pode usar serviços cloud como:
+- **AWS RDS** - https://aws.amazon.com/rds/mysql/
+- **PlanetScale** - https://planetscale.com/ (tem plano gratuito)
+- **Railway** - https://railway.app/ (tem plano gratuito)
+- **DigitalOcean Managed Databases**
+- **Google Cloud SQL**
+
+**Configuração no .env para cloud:**
 ```env
 PORT=5000
-MONGODB_URI=mongodb+srv://dev_user:MinhaSenh@123@cluster0.abc123.mongodb.net/kanban?retryWrites=true&w=majority
-JWT_SECRET=minha_chave_secreta_jwt_123456
+
+# MySQL Cloud Configuration
+DB_HOST=seu-host-mysql.cloud.com
+DB_PORT=3306
+DB_NAME=kanban
+DB_USER=seu_usuario
+DB_PASSWORD=sua_senha_segura
+
+JWT_SECRET=seu_jwt_secret_super_seguro_aqui_mude_em_producao
 NODE_ENV=development
 ```
+
+**💡 Dica:** O Sequelize criará automaticamente as tabelas na primeira execução!
 
 ### 2.4 Testar o Backend
 
@@ -222,7 +200,7 @@ NODE_ENV=development
 npm start
 
 # Você deve ver:
-# ✅ Conectado ao MongoDB
+# ✅ Conectado ao MySQL
 # 🚀 Servidor rodando na porta 5000
 ```
 
@@ -276,7 +254,7 @@ Após seguir todos os passos, você deve ter:
 
 1. ✅ Backend rodando em `http://localhost:5000`
 2. ✅ Frontend rodando em `http://localhost:3000`
-3. ✅ Conexão com MongoDB Atlas estabelecida
+3. ✅ Conexão com MySQL estabelecida
 4. ✅ Aplicação funcionando no navegador
 
 ---
@@ -362,24 +340,24 @@ REACT_APP_API_URL=http://localhost:5000/api
 
 ## 🐛 Troubleshooting
 
-### Erro: "ECONNREFUSED" ao conectar MongoDB
+### Erro: "ECONNREFUSED" ao conectar MySQL
 
-**Causa:** MongoDB não está rodando ou string de conexão incorreta.
-
-**Solução:**
-- Verifique se a string `MONGODB_URI` está correta no `.env`
-- Confirme que o usuário e senha estão corretos
-- Verifique se o acesso de rede está configurado no MongoDB Atlas
-- Teste a conexão diretamente no MongoDB Atlas
-
-### Erro: "Invalid scheme" na conexão MongoDB
-
-**Causa:** String de conexão malformada.
+**Causa:** MySQL não está rodando ou configuração incorreta.
 
 **Solução:**
-- Verifique se a string começa com `mongodb+srv://`
-- Confirme que não há espaços extras
-- Verifique se a senha está codificada corretamente (caracteres especiais)
+- Verifique se o MySQL está rodando: `sudo systemctl status mysql` (Linux) ou serviços do Windows
+- Confirme as variáveis `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` no `.env`
+- Teste a conexão: `mysql -u DB_USER -p -h DB_HOST`
+- Verifique se o banco de dados foi criado: `SHOW DATABASES;`
+
+### Erro: "Access denied" no MySQL
+
+**Causa:** Credenciais incorretas ou usuário sem permissões.
+
+**Solução:**
+- Verifique usuário e senha no `.env`
+- Confirme que o usuário tem permissões: `GRANT ALL PRIVILEGES ON kanban.* TO 'usuario'@'localhost';`
+- Verifique se o usuário pode acessar de localhost ou do IP correto
 
 ### Erro: "Token inválido" ou "Não autorizado"
 
@@ -416,23 +394,275 @@ taskkill /PID <PID> /F
 
 ---
 
-## 📊 Visualizar Dados no MongoDB
+## 🚀 Configuração para Produção
 
-### Opção 1: MongoDB Atlas Web Interface
+### MySQL é adequado para produção?
 
-1. Acesse: https://cloud.mongodb.com
-2. Faça login
-3. Clique no seu cluster
-4. Clique em **"Browse Collections"**
-5. Expanda o banco `kanban`
-6. Veja as coleções: `users`, `projects`, `tasks`
+**✅ SIM!** MySQL é **amplamente usado em produção** por empresas de todos os tamanhos, incluindo Facebook, Twitter, YouTube, e muitas outras. Vantagens:
 
-### Opção 2: MongoDB Compass
+- ✅ **Confiabilidade**: Banco de dados relacional maduro e estável
+- ✅ **Performance**: Otimizado para leitura e escrita intensiva
+- ✅ **Escalabilidade**: Suporta milhões de registros e transações
+- ✅ **Segurança**: Criptografia, autenticação e controle de acesso robustos
+- ✅ **Backups**: Ferramentas nativas de backup e restauração
+- ✅ **Suporte**: Grande comunidade e documentação extensa
+- ✅ **Cloud Ready**: Disponível em todos os principais provedores cloud
 
-1. Baixe: https://www.mongodb.com/try/download/compass
+**Opções de hospedagem:**
+- **MySQL Local**: Para desenvolvimento e pequenos projetos
+- **AWS RDS**: Gerenciado pela Amazon, escalável e confiável
+- **PlanetScale**: MySQL serverless com plano gratuito
+- **DigitalOcean Managed Databases**: Simples e acessível
+- **Google Cloud SQL**: Gerenciado pelo Google
+
+**💡 Dica:** Você pode usar o mesmo MySQL tanto em desenvolvimento quanto em produção, apenas separando os bancos de dados ou usando instâncias diferentes.
+
+### Por que separar Desenvolvimento e Produção?
+
+**⚠️ IMPORTANTE:** É **altamente recomendado** usar bancos de dados separados para desenvolvimento e produção pelos seguintes motivos:
+
+1. **Segurança**: Dados de produção não devem ser acessados durante desenvolvimento
+2. **Estabilidade**: Testes não devem afetar dados reais dos usuários
+3. **Performance**: Desenvolvimento pode ter queries pesadas que não devem impactar produção
+4. **Backup**: Dados de produção precisam de backups mais frequentes
+5. **Compliance**: Separação de ambientes é uma boa prática de segurança
+
+### Opções de Configuração
+
+Você tem **duas opções principais**:
+
+#### Opção 1: Mesma Instância MySQL, Bancos Diferentes (Recomendado para começar)
+
+**Vantagens:**
+- ✅ Mais econômico (usa a mesma instância)
+- ✅ Mais simples de gerenciar
+- ✅ Ideal para projetos pequenos/médios
+
+**Como configurar:**
+
+1. Use a **mesma instância MySQL** para ambos os ambientes
+2. Configure bancos de dados diferentes:
+   - Desenvolvimento: `kanban_dev`
+   - Produção: `kanban_prod`
+
+3. **Arquivo `.env` de Desenvolvimento:**
+   ```env
+   PORT=5000
+   DB_HOST=localhost
+   DB_PORT=3306
+   DB_NAME=kanban_dev
+   DB_USER=kanban_user
+   DB_PASSWORD=senha_dev
+   JWT_SECRET=chave_secreta_desenvolvimento
+   NODE_ENV=development
+   ```
+
+4. **Arquivo `.env` de Produção** (no servidor):
+   ```env
+   PORT=5000
+   DB_HOST=localhost
+   DB_PORT=3306
+   DB_NAME=kanban_prod
+   DB_USER=kanban_user
+   DB_PASSWORD=senha_forte_producao
+   JWT_SECRET=chave_secreta_producao_super_forte_e_diferente
+   NODE_ENV=production
+   ```
+
+#### Opção 2: Instâncias Separadas (Recomendado para produção)
+
+**Vantagens:**
+- ✅ Máxima segurança e isolamento
+- ✅ Performance otimizada para cada ambiente
+- ✅ Escalabilidade independente
+- ✅ Backup e manutenção separados
+
+**Como configurar:**
+
+1. **Criar Instância de Produção:**
+   - Use AWS RDS, PlanetScale, DigitalOcean ou outro serviço
+   - Configure acesso apenas para IPs do servidor de produção
+   - Crie usuário específico para produção
+   - Configure backups automáticos
+
+2. **Configurar Variáveis de Ambiente no Servidor:**
+
+   **Desenvolvimento (local):**
+   ```env
+   PORT=5000
+   DB_HOST=localhost
+   DB_PORT=3306
+   DB_NAME=kanban_dev
+   DB_USER=dev_user
+   DB_PASSWORD=senha_dev
+   JWT_SECRET=chave_dev
+   NODE_ENV=development
+   ```
+
+   **Produção (servidor):**
+   ```env
+   PORT=5000
+   DB_HOST=seu-mysql-prod.rds.amazonaws.com
+   DB_PORT=3306
+   DB_NAME=kanban_prod
+   DB_USER=prod_user
+   DB_PASSWORD=senha_forte_producao
+   JWT_SECRET=chave_super_secreta_producao_aleatoria_123456789
+   NODE_ENV=production
+   ```
+
+### Configurando no Servidor de Produção
+
+#### Passo 1: Preparar o Servidor
+
+```bash
+# No servidor de produção, clone o repositório
+git clone https://github.com/FORMINDTECH/PROJECTHUB.git
+cd PROJECTHUB
+
+# Instale dependências
+cd backend && npm install --production
+cd ../frontend && npm install && npm run build
+```
+
+#### Passo 2: Configurar Variáveis de Ambiente
+
+```bash
+# Crie o arquivo .env no servidor
+cd backend
+cp env.example .env
+nano .env  # ou use seu editor preferido
+```
+
+**Configure com as credenciais de PRODUÇÃO:**
+```env
+PORT=5000
+DB_HOST=seu-mysql-prod.rds.amazonaws.com
+DB_PORT=3306
+DB_NAME=kanban_prod
+DB_USER=prod_user
+DB_PASSWORD=senha_forte_producao
+JWT_SECRET=chave_super_secreta_diferente_da_dev
+NODE_ENV=production
+```
+
+#### Passo 3: Configurar Frontend
+
+```bash
+cd ../frontend
+cp .env.example .env
+nano .env
+```
+
+**Configure a URL da API de produção:**
+```env
+REACT_APP_API_URL=https://api.seudominio.com/api
+```
+
+#### Passo 4: Iniciar Aplicação
+
+**Backend (com PM2 ou similar):**
+```bash
+# Instalar PM2 globalmente
+npm install -g pm2
+
+# Iniciar aplicação
+cd backend
+pm2 start src/server.js --name projecthub-api
+
+# Salvar configuração
+pm2 save
+pm2 startup
+```
+
+**Frontend (servir build estático):**
+```bash
+# O build já foi criado com npm run build
+# Sirva com nginx, Apache ou outro servidor web
+```
+
+### Boas Práticas de Segurança para Produção
+
+1. **Senhas Fortes**
+   - Use senhas diferentes para dev e prod
+   - Use gerador de senhas aleatórias
+   - Armazene em gerenciador de senhas seguro
+
+2. **JWT Secret**
+   - Use uma string aleatória longa e complexa
+   - **NUNCA** use a mesma chave em dev e prod
+   - Gere com: `openssl rand -base64 32`
+
+3. **Acesso de Rede**
+   - Em produção, restrinja IPs no MongoDB Atlas
+   - Adicione apenas IPs do servidor de produção
+   - Remova `0.0.0.0/0` em produção
+
+4. **Usuários do Banco**
+   - Crie usuários separados para dev e prod
+   - Use permissões mínimas necessárias
+   - Revise permissões periodicamente
+
+5. **Backups**
+   - Configure backups automáticos no Atlas
+   - Teste restauração periodicamente
+   - Mantenha backups em local seguro
+
+6. **Monitoramento**
+   - Configure alertas no MongoDB Atlas
+   - Monitore performance e uso
+   - Configure logs de erro
+
+7. **HTTPS**
+   - Use certificado SSL em produção
+   - Force HTTPS em todas as conexões
+   - Configure CORS corretamente
+
+### Checklist de Deploy
+
+Antes de fazer deploy em produção, verifique:
+
+- [ ] Banco de dados de produção criado e configurado
+- [ ] Variáveis de ambiente configuradas no servidor
+- [ ] JWT_SECRET diferente do desenvolvimento
+- [ ] Acesso de rede restrito no MySQL (firewall/security groups)
+- [ ] Usuário do banco criado especificamente para produção
+- [ ] Backups configurados no MySQL
+- [ ] Conexão SSL configurada para MySQL
+- [ ] HTTPS configurado
+- [ ] CORS configurado para domínio de produção
+- [ ] Logs de erro configurados
+- [ ] Monitoramento ativo
+- [ ] Testes realizados em ambiente de staging (se houver)
+
+---
+
+## 📊 Visualizar Dados no MySQL
+
+### Opção 1: MySQL Workbench (Recomendado)
+
+1. Baixe: https://dev.mysql.com/downloads/workbench/
 2. Instale o aplicativo
-3. Cole a string de conexão do Atlas
-4. Explore os dados visualmente
+3. Crie uma nova conexão com as credenciais do `.env`
+4. Explore as tabelas: `users`, `projects`, `tasks`
+
+### Opção 2: phpMyAdmin (Web Interface)
+
+1. Instale phpMyAdmin ou use uma instância web
+2. Acesse via navegador
+3. Faça login com as credenciais do MySQL
+4. Selecione o banco `kanban` e explore as tabelas
+
+### Opção 3: Linha de Comando
+
+```bash
+mysql -u DB_USER -p -h DB_HOST
+USE kanban;
+SHOW TABLES;
+SELECT * FROM users;
+SELECT * FROM projects;
+SELECT * FROM tasks;
+```
 
 ---
 
@@ -457,10 +687,10 @@ npm test           # Executa testes
 
 ## 📚 Recursos Adicionais
 
-- [Documentação MongoDB Atlas](https://docs.atlas.mongodb.com/)
+- [Documentação MySQL](https://dev.mysql.com/doc/)
+- [Documentação Sequelize](https://sequelize.org/)
 - [Documentação Express.js](https://expressjs.com/)
 - [Documentação React](https://react.dev/)
-- [Documentação Mongoose](https://mongoosejs.com/)
 
 ---
 

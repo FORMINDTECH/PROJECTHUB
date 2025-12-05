@@ -1,40 +1,61 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const taskSchema = new mongoose.Schema({
+const Task = sequelize.define('Task', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
   title: {
-    type: String,
-    required: [true, 'Título da tarefa é obrigatório'],
-    trim: true,
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notEmpty: {
+        msg: 'Título da tarefa é obrigatório'
+      }
+    }
   },
   description: {
-    type: String,
-    trim: true,
+    type: DataTypes.TEXT,
+    allowNull: true
   },
   status: {
-    type: String,
-    required: true,
-    enum: ['todo', 'in-progress', 'done'],
-    default: 'todo',
+    type: DataTypes.ENUM('todo', 'in-progress', 'done'),
+    defaultValue: 'todo',
+    allowNull: false
   },
   order: {
-    type: Number,
-    default: 0,
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    allowNull: false
   },
-  project: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Project',
-    required: true,
+  projectId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'projects',
+      key: 'id'
+    },
+    field: 'project_id'
   },
-  assignedTo: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
+  assignedToId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'users',
+      key: 'id'
+    },
+    field: 'assigned_to_id'
+  }
 }, {
+  tableName: 'tasks',
   timestamps: true,
+  indexes: [
+    {
+      fields: ['project_id', 'status', 'order']
+    }
+  ]
 });
 
-// Índice para ordenação
-taskSchema.index({ project: 1, status: 1, order: 1 });
-
-module.exports = mongoose.model('Task', taskSchema);
-
+module.exports = Task;

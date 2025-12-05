@@ -51,3 +51,4 @@ echo ""
 echo "🎉 Configuração concluída!"
 echo "Agora você pode iniciar o servidor com: npm start"
 
+

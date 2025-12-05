@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const { User } = require('../models');
 const auth = require('../middleware/auth');
 
 // Gerar token JWT
@@ -29,22 +29,25 @@ router.post('/register', [
     const { name, email, password } = req.body;
 
     // Verificar se usuário já existe
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ where: { email: email.toLowerCase() } });
     if (existingUser) {
       return res.status(400).json({ message: 'Email já cadastrado' });
     }
 
     // Criar usuário
-    const user = new User({ name, email, password });
-    await user.save();
+    const user = await User.create({
+      name,
+      email: email.toLowerCase(),
+      password,
+    });
 
     // Gerar token
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
 
     res.status(201).json({
       token,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
       },
@@ -70,8 +73,8 @@ router.post('/login', [
 
     const { email, password } = req.body;
 
-    // Buscar usuário com senha
-    const user = await User.findOne({ email }).select('+password');
+    // Buscar usuário
+    const user = await User.findOne({ where: { email: email.toLowerCase() } });
     if (!user) {
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
@@ -83,12 +86,12 @@ router.post('/login', [
     }
 
     // Gerar token
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
 
     res.json({
       token,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
       },
@@ -105,7 +108,7 @@ router.post('/login', [
 router.get('/me', auth, async (req, res) => {
   res.json({
     user: {
-      id: req.user._id,
+      id: req.user.id,
       name: req.user.name,
       email: req.user.email,
     },
@@ -113,4 +116,3 @@ router.get('/me', auth, async (req, res) => {
 });
 
 module.exports = router;
-

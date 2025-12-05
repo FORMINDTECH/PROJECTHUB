@@ -1,18 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const Project = require('../models/Project');
-const Task = require('../models/Task');
+const { Project, Task } = require('../models');
 const auth = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { Op } = require('sequelize');
 
 // @route   GET /api/projects
 // @desc    Listar projetos do usuário
 // @access  Private
 router.get('/', auth, async (req, res) => {
   try {
-    const projects = await Project.find({ owner: req.user._id })
-      .sort({ createdAt: -1 });
+    const projects = await Project.findAll({
+      where: { ownerId: req.user.id },
+      order: [['createdAt', 'DESC']]
+    });
     res.json(projects);
   } catch (error) {
     console.error('Erro ao listar projetos:', error);
@@ -26,8 +28,10 @@ router.get('/', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
   try {
     const project = await Project.findOne({
-      _id: req.params.id,
-      owner: req.user._id,
+      where: {
+        id: req.params.id,
+        ownerId: req.user.id,
+      }
     });
 
     if (!project) {
@@ -56,14 +60,13 @@ router.post('/', [
 
     const { name, description, color } = req.body;
 
-    const project = new Project({
+    const project = await Project.create({
       name,
       description,
       color: color || '#6366f1',
-      owner: req.user._id,
+      ownerId: req.user.id,
     });
 
-    await project.save();
     res.status(201).json(project);
   } catch (error) {
     console.error('Erro ao criar projeto:', error);
@@ -85,8 +88,10 @@ router.put('/:id', [
     }
 
     const project = await Project.findOne({
-      _id: req.params.id,
-      owner: req.user._id,
+      where: {
+        id: req.params.id,
+        ownerId: req.user.id,
+      }
     });
 
     if (!project) {
@@ -112,8 +117,10 @@ router.put('/:id', [
 router.post('/:id/logo', auth, upload.single('logo'), async (req, res) => {
   try {
     const project = await Project.findOne({
-      _id: req.params.id,
-      owner: req.user._id,
+      where: {
+        id: req.params.id,
+        ownerId: req.user.id,
+      }
     });
 
     if (!project) {
@@ -140,8 +147,10 @@ router.post('/:id/logo', auth, upload.single('logo'), async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
   try {
     const project = await Project.findOne({
-      _id: req.params.id,
-      owner: req.user._id,
+      where: {
+        id: req.params.id,
+        ownerId: req.user.id,
+      }
     });
 
     if (!project) {
@@ -149,10 +158,10 @@ router.delete('/:id', auth, async (req, res) => {
     }
 
     // Deletar todas as tarefas do projeto
-    await Task.deleteMany({ project: project._id });
+    await Task.destroy({ where: { projectId: project.id } });
 
     // Deletar projeto
-    await Project.deleteOne({ _id: project._id });
+    await project.destroy();
 
     res.json({ message: 'Projeto deletado com sucesso' });
   } catch (error) {
@@ -162,4 +171,3 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 module.exports = router;
-
