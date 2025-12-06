@@ -37,6 +37,9 @@ const ProjectCard = ({ project, onClick, onDelete }) => {
           ×
         </button>
       </div>
+      {!project.logo && (
+        <div style={{ marginBottom: '20px' }}></div>
+      )}
       <h3 className="project-name">{project.name}</h3>
       {project.description && (
         <p className="project-description">{project.description}</p>

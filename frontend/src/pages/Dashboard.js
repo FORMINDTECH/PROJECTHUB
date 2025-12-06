@@ -10,6 +10,7 @@ import ProfileModal from '../components/ProfileModal';
 import InvitesModal from '../components/InvitesModal';
 import ConfirmModal from '../components/ConfirmModal';
 import ErrorModal from '../components/ErrorModal';
+import Footer from '../components/Footer';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -99,7 +100,7 @@ const Dashboard = () => {
             )}
             <button 
               onClick={() => setShowProfileModal(true)} 
-              className="btn btn-secondary btn-sm user-profile-btn"
+              className="btn btn-secondary btn-lg user-profile-btn"
               title="Meu Perfil"
             >
               {user?.avatar ? (
@@ -128,7 +129,6 @@ const Dashboard = () => {
       <main className="dashboard-main">
         <div className="projects-container">
           <div className="projects-header">
-            <h2>Projetos ({projects.length})</h2>
             <button
               onClick={() => setShowModal(true)}
               className="btn btn-primary"
@@ -203,9 +203,10 @@ const Dashboard = () => {
           title="Erro"
           message={errorModal.message}
         />
-      </div>
-    );
-  };
+      <Footer />
+    </div>
+  );
+};
 
   export default Dashboard;
 

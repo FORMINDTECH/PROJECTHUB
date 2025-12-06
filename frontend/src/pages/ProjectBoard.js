@@ -25,6 +25,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import AssignMemberModal from '../components/AssignMemberModal';
 import EditProjectModal from '../components/EditProjectModal';
 import ErrorModal from '../components/ErrorModal';
+import Footer from '../components/Footer';
 import { useTheme } from '../context/ThemeContext';
 import { AuthContext } from '../context/AuthContext';
 import './ProjectBoard.css';
@@ -107,7 +108,7 @@ const PostIt = ({ task, onDelete, onEdit }) => {
 };
 
 // Componente Sortable para cada tarefa
-const SortableTask = ({ task, column, onDelete, onEdit }) => {
+const SortableTask = ({ task, column, onDelete, onEdit, isNewTask }) => {
   const taskId = String(task.id || task._id);
   
   const {
@@ -131,7 +132,7 @@ const SortableTask = ({ task, column, onDelete, onEdit }) => {
       style={style}
       {...listeners}
       {...attributes}
-      className={`task-card task-card-${column.id} ${isDragging ? 'dragging' : ''}`}
+      className={`task-card task-card-${column.id} ${isDragging ? 'dragging' : ''} ${isNewTask ? 'new-task-drop' : ''}`}
     >
       <div className="task-header">
         <div style={{ flex: 1 }}>
@@ -200,7 +201,7 @@ const SortableTask = ({ task, column, onDelete, onEdit }) => {
 };
 
 // Componente para cada coluna
-const Column = ({ column, tasks, onDelete, onEdit }) => {
+const Column = ({ column, tasks, onDelete, onEdit, isDropped, newTaskId }) => {
   const taskIds = tasks.map(task => String(task.id || task._id));
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
@@ -209,7 +210,7 @@ const Column = ({ column, tasks, onDelete, onEdit }) => {
   return (
     <div 
       ref={setNodeRef}
-      className={`board-column ${isOver ? 'drag-over' : ''}`}
+      className={`board-column ${isOver ? 'drag-over' : ''} ${isDropped ? 'drop-animation' : ''}`}
       style={{
         borderLeft: `4px solid ${column.color}`,
       }}
@@ -231,9 +232,9 @@ const Column = ({ column, tasks, onDelete, onEdit }) => {
           {tasks.length}
         </span>
       </div>
-      <div className="column-content-wrapper" style={{ position: 'relative' }}>
+      <div className="column-content-wrapper" style={{ position: 'relative', flex: 1 }}>
         <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
-          <div className="column-content" style={{ minHeight: '400px' }}>
+          <div className="column-content">
             {tasks.map((task) => {
               const taskId = String(task.id || task._id);
               if (!taskId || taskId === 'undefined' || taskId === 'null' || taskId === '') {
@@ -246,6 +247,7 @@ const Column = ({ column, tasks, onDelete, onEdit }) => {
                   column={column}
                   onDelete={onDelete}
                   onEdit={onEdit}
+                  isNewTask={newTaskId === taskId}
                 />
               );
             })}
@@ -280,6 +282,8 @@ const ProjectBoard = () => {
   const [activeId, setActiveId] = useState(null);
   const [taskCreated, setTaskCreated] = useState(0);
   const [draftData, setDraftData] = useState({ title: '', description: '' });
+  const [droppedColumnId, setDroppedColumnId] = useState(null);
+  const [newTaskId, setNewTaskId] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, taskId: null });
   const [assignModal, setAssignModal] = useState({ isOpen: false, task: null });
   const [errorModal, setErrorModal] = useState({ isOpen: false, message: '' });
@@ -346,11 +350,97 @@ const ProjectBoard = () => {
     const { active, over } = event;
     setActiveId(null);
 
+    const activeId = String(active.id);
+    
+    // Verificar se é o post-it de rascunho sendo arrastado PRIMEIRO
+    if (activeId === 'draft-postit') {
+      // Se não há over, não criar tarefa (post-it volta ao lugar)
+      if (!over) {
+        return;
+      }
+
+      const overId = String(over.id);
+      
+      // Se soltou na mesma posição, não faz nada
+      if (activeId === overId) {
+        return;
+      }
+
+      // Lista de IDs de colunas válidas - APENAS estas são aceitas
+      const validColumnIds = ['todo', 'in-progress', 'done'];
+      
+      // Primeiro, verificar se overId corresponde diretamente a uma coluna válida
+      let targetColumn = null;
+      
+      // Verificar se overId é diretamente uma coluna válida
+      if (validColumnIds.includes(overId)) {
+        targetColumn = columns.find(col => col.id === overId);
+      }
+      
+      // Se não encontrou uma coluna diretamente, verificar se soltou sobre uma tarefa válida
+      // que está dentro de uma coluna válida
+      if (!targetColumn) {
+        const overTask = tasks.find((t) => {
+          const tId = String(t.id || t._id);
+          return tId === overId;
+        });
+        
+        // Se encontrou uma tarefa válida, usar a coluna dessa tarefa
+        if (overTask) {
+          const taskStatus = overTask.status || overTask._status;
+          if (taskStatus && ['todo', 'in-progress', 'done'].includes(taskStatus)) {
+            targetColumn = columns.find(col => col.status === taskStatus);
+          }
+        }
+      }
+      
+      // APENAS criar a tarefa se encontrou uma coluna válida
+      // O overId deve ser EXATAMENTE um ID de coluna válida OU o ID de uma tarefa válida dentro de uma coluna
+      if (targetColumn && validColumnIds.includes(targetColumn.id)) {
+        // Verificar se realmente soltou sobre a coluna ou sobre uma tarefa dentro dela
+        const isDroppedOnColumn = validColumnIds.includes(overId);
+        const isDroppedOnTask = tasks.some(t => {
+          const tId = String(t.id || t._id);
+          return tId === overId && ['todo', 'in-progress', 'done'].includes(t.status || t._status);
+        });
+        
+        // Só criar se soltou diretamente na coluna OU em uma tarefa válida dentro dela
+        if (isDroppedOnColumn || isDroppedOnTask) {
+          const draftDataFromActive = active.data?.current?.draftData;
+          const currentDraftData = draftDataFromActive || draftData;
+          if (currentDraftData && currentDraftData.title && currentDraftData.title.trim()) {
+            try {
+              const response = await api.post('/tasks', {
+                title: currentDraftData.title.trim(),
+                description: (currentDraftData.description || '').trim(),
+                status: targetColumn.status,
+                project: id,
+              });
+              // Animação de drop
+              setDroppedColumnId(targetColumn.id);
+              setNewTaskId(response.data.id || response.data._id);
+              setTimeout(() => {
+                setDroppedColumnId(null);
+                setNewTaskId(null);
+              }, 800);
+              await loadTasks();
+              setTaskCreated(prev => prev + 1); // Trigger para limpar o formulário
+            } catch (error) {
+              console.error('Erro ao criar tarefa:', error);
+              setErrorModal({ isOpen: true, message: error.response?.data?.message || 'Erro ao criar tarefa' });
+            }
+          }
+        }
+      }
+      // Se não encontrou coluna válida, apenas retorna (post-it volta ao lugar mantendo as informações)
+      return;
+    }
+
+    // Se não é o post-it, continuar com a lógica normal de arrastar tarefas
     if (!over) {
       return;
     }
 
-    const activeId = String(active.id);
     let overId = String(over.id);
 
     // Se soltou na mesma posição, não faz nada
@@ -371,33 +461,6 @@ const ProjectBoard = () => {
       if (taskColumn) {
         overId = taskColumn.id;
       }
-    }
-
-    // Verificar se é o post-it de rascunho sendo arrastado
-    if (activeId === 'draft-postit') {
-      // Verificar se está sendo soltado em uma coluna
-      const targetColumn = columns.find(col => col.id === overId);
-      
-      if (targetColumn) {
-        const draftDataFromActive = active.data?.current?.draftData;
-        const currentDraftData = draftDataFromActive || draftData;
-        if (currentDraftData && currentDraftData.title && currentDraftData.title.trim()) {
-          try {
-            await api.post('/tasks', {
-              title: currentDraftData.title.trim(),
-              description: (currentDraftData.description || '').trim(),
-              status: targetColumn.status,
-              project: id,
-            });
-            await loadTasks();
-            setTaskCreated(prev => prev + 1); // Trigger para limpar o formulário
-          } catch (error) {
-            console.error('Erro ao criar tarefa:', error);
-            setErrorModal({ isOpen: true, message: error.response?.data?.message || 'Erro ao criar tarefa' });
-          }
-        }
-      }
-      return;
     }
 
     // Encontrar a tarefa sendo arrastada
@@ -641,7 +704,7 @@ const ProjectBoard = () => {
         style={{ borderBottomColor: project.color }}
       >
         <div className="header-content">
-          <button onClick={() => navigate('/dashboard')} className="btn btn-secondary">
+          <button onClick={() => navigate('/dashboard')} className="btn btn-secondary btn-lg">
             ← Voltar
           </button>
           <div className="project-info">
@@ -661,7 +724,7 @@ const ProjectBoard = () => {
               {project?.ownerId === user?.id && (
                 <button 
                   onClick={() => setShowEditProjectModal(true)} 
-                  className="btn btn-secondary btn-sm"
+                  className="btn btn-secondary btn-lg"
                   title="Editar Projeto"
                 >
                   ✏️ Editar Projeto
@@ -669,7 +732,7 @@ const ProjectBoard = () => {
               )}
           <button
                 onClick={() => setShowMembersModal(true)} 
-                className="btn btn-secondary btn-sm"
+                className="btn btn-secondary btn-lg"
                 title="Membros do Projeto"
           >
                 👥 Membros
@@ -729,6 +792,8 @@ const ProjectBoard = () => {
                   tasks={columnTasks}
                   onDelete={handleDeleteTask}
                   onEdit={handleEditTask}
+                  isDropped={droppedColumnId === column.id}
+                  newTaskId={newTaskId}
                 />
               );
             })}
@@ -825,6 +890,7 @@ const ProjectBoard = () => {
         title="Erro"
         message={errorModal.message}
       />
+      <Footer />
     </div>
   );
 };
