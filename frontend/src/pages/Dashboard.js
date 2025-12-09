@@ -11,6 +11,7 @@ import InvitesModal from '../components/InvitesModal';
 import ConfirmModal from '../components/ConfirmModal';
 import ErrorModal from '../components/ErrorModal';
 import Footer from '../components/Footer';
+import Calendar from '../components/Calendar';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -25,11 +26,6 @@ const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    loadProjects();
-    loadInvitesCount();
-  }, []);
 
   const loadInvitesCount = async () => {
     try {
@@ -51,16 +47,50 @@ const Dashboard = () => {
     }
   };
 
+  useEffect(() => {
+    loadProjects();
+    loadInvitesCount();
+  }, []);
+
   const handleCreateProject = async (projectData) => {
     try {
-      const response = await api.post('/projects', projectData);
+      let response;
+      
+      // Se houver logo, usar FormData
+      if (projectData.logo) {
+        const formData = new FormData();
+        formData.append('name', projectData.name || '');
+        formData.append('description', projectData.description || '');
+        formData.append('color', projectData.color || '#6366f1');
+        formData.append('logo', projectData.logo);
+        
+        console.log('Enviando FormData:', {
+          name: projectData.name,
+          description: projectData.description,
+          color: projectData.color,
+          hasLogo: !!projectData.logo
+        });
+        
+        // O axios detectará automaticamente FormData e definirá Content-Type com boundary
+        response = await api.post('/projects', formData);
+      } else {
+        // Sem logo, enviar como JSON normal
+        response = await api.post('/projects', projectData);
+      }
+      
       setProjects([response.data, ...projects]);
       setShowModal(false);
       return { success: true };
     } catch (error) {
+      console.error('Erro ao criar projeto:', error);
+      console.error('Resposta do servidor:', error.response?.data);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.errors?.[0]?.msg || 
+                          error.response?.data?.errors?.[0]?.message ||
+                          'Erro ao criar projeto';
       return {
         success: false,
-        error: error.response?.data?.message || 'Erro ao criar projeto',
+        error: errorMessage,
       };
     }
   };
@@ -127,40 +157,47 @@ const Dashboard = () => {
       </header>
 
       <main className="dashboard-main">
-        <div className="projects-container">
-          <div className="projects-header">
-            <button
-              onClick={() => setShowModal(true)}
-              className="btn btn-primary"
-            >
-              + Novo Projeto
-            </button>
-          </div>
+        <div className="dashboard-content-wrapper">
+          <aside className="dashboard-sidebar">
+            <Calendar projects={projects} />
+          </aside>
+          <div className="dashboard-main-content">
+            <div className="projects-container">
+              <div className="projects-header">
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="btn btn-primary"
+                >
+                  + Novo Projeto
+                </button>
+              </div>
 
-          {loading ? (
-            <div className="loading">Carregando projetos...</div>
-          ) : projects.length === 0 ? (
-            <div className="empty-state">
-              <p>Você ainda não tem projetos.</p>
-              <button
-                onClick={() => setShowModal(true)}
-                className="btn btn-primary"
-              >
-                Criar Primeiro Projeto
-              </button>
+              {loading ? (
+                <div className="loading">Carregando projetos...</div>
+              ) : projects.length === 0 ? (
+                <div className="empty-state">
+                  <p>Você ainda não tem projetos.</p>
+                  <button
+                    onClick={() => setShowModal(true)}
+                    className="btn btn-primary"
+                  >
+                    Criar Primeiro Projeto
+                  </button>
+                </div>
+              ) : (
+                <div className="projects-grid">
+                  {projects.map((project) => (
+                    <ProjectCard
+                      key={project.id}
+                      project={project}
+                      onDelete={handleDeleteProject}
+                      onClick={() => navigate(`/project/${project.id}`)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="projects-grid">
-              {projects.map((project) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  onDelete={handleDeleteProject}
-                  onClick={() => navigate(`/project/${project.id}`)}
-                />
-              ))}
-            </div>
-          )}
+          </div>
         </div>
       </main>
 

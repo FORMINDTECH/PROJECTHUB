@@ -3,6 +3,7 @@ const Project = require('./Project');
 const Task = require('./Task');
 const ProjectMember = require('./ProjectMember');
 const ProjectInvite = require('./ProjectInvite');
+const UserProjectPreference = require('./UserProjectPreference');
 
 // Definir relacionamentos
 User.hasMany(Project, { foreignKey: 'ownerId', as: 'ownedProjects' });
@@ -40,12 +41,20 @@ ProjectInvite.belongsTo(User, { foreignKey: 'userId', as: 'invitedUser' });
 User.hasMany(ProjectInvite, { foreignKey: 'inviterId', as: 'sentInvites' });
 ProjectInvite.belongsTo(User, { foreignKey: 'inviterId', as: 'inviter' });
 
+// Relacionamentos para UserProjectPreference
+User.hasMany(UserProjectPreference, { foreignKey: 'userId', as: 'projectPreferences' });
+UserProjectPreference.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+Project.hasMany(UserProjectPreference, { foreignKey: 'projectId', as: 'userPreferences' });
+UserProjectPreference.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+
 module.exports = {
   User,
   Project,
   Task,
   ProjectMember,
-  ProjectInvite
+  ProjectInvite,
+  UserProjectPreference
 };
 
 

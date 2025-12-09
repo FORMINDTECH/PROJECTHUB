@@ -96,9 +96,26 @@
 /* Botões usam classes padronizadas do buttons.css */
 
 .dashboard-main {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 20px;
+}
+
+.dashboard-content-wrapper {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+}
+
+.dashboard-sidebar {
+  flex-shrink: 0;
+  position: sticky;
+  top: 20px;
+}
+
+.dashboard-main-content {
+  flex: 1;
+  min-width: 0;
 }
 
 .projects-container {
@@ -175,6 +192,17 @@
   font-size: 1.1rem;
 }
 
+@media (max-width: 1024px) {
+  .dashboard-content-wrapper {
+    flex-direction: column;
+  }
+
+  .dashboard-sidebar {
+    position: static;
+    width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
   .projects-grid {
     grid-template-columns: 1fr;
@@ -184,6 +212,10 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
+  }
+
+  .dashboard-content-wrapper {
+    gap: 20px;
   }
 
   /* Botões usam classes padronizadas do buttons.css */

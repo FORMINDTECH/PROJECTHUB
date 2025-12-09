@@ -94,20 +94,23 @@ router.get('/:id', auth, async (req, res) => {
 // @access  Private
 router.post('/', [
   auth,
-  body('name').trim().notEmpty().withMessage('Nome do projeto é obrigatório'),
+  upload.single('logo'),
 ], async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+    const { name, description, color } = req.body;
+    
+    // Validação manual (funciona tanto para FormData quanto JSON)
+    if (!name || (typeof name === 'string' && name.trim() === '')) {
+      return res.status(400).json({ message: 'Nome do projeto é obrigatório' });
     }
 
-    const { name, description, color } = req.body;
+    const logoPath = req.file ? `/uploads/${req.file.filename}` : null;
 
     const project = await Project.create({
-      name,
-      description,
+      name: typeof name === 'string' ? name.trim() : name,
+      description: description || null,
       color: color || '#6366f1',
+      logo: logoPath,
       ownerId: req.user.id,
     });
 
@@ -129,7 +132,7 @@ router.post('/', [
     res.status(201).json(project);
   } catch (error) {
     console.error('Erro ao criar projeto:', error);
-    res.status(500).json({ message: 'Erro ao criar projeto' });
+    res.status(500).json({ message: error.message || 'Erro ao criar projeto' });
   }
 });
 

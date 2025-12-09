@@ -9,6 +9,13 @@ const ProjectCard = ({ project, onClick, onDelete }) => {
     onDelete(project.id);
   };
 
+  const truncateName = (name) => {
+    if (name && name.length > 6) {
+      return name.substring(0, 6) + '...';
+    }
+    return name;
+  };
+
   const cardStyle = {
     borderTopColor: project.color,
     backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
@@ -40,7 +47,7 @@ const ProjectCard = ({ project, onClick, onDelete }) => {
       {!project.logo && (
         <div style={{ marginBottom: '20px' }}></div>
       )}
-      <h3 className="project-name">{project.name}</h3>
+      <h3 className="project-name">{truncateName(project.name)}</h3>
       {project.description && (
         <p className="project-description">{project.description}</p>
       )}

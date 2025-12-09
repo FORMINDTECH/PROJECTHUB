@@ -112,11 +112,24 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+.color-picker-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.color-picker-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 4px;
+  transition: color 0.3s ease;
+}
+
 .color-picker {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 10px;
 }
 
 .color-option {
@@ -125,24 +138,77 @@
   border-radius: 8px;
   border: 3px solid transparent;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.2s;
+  position: relative;
 }
 
 .color-option:hover {
   transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .color-option.selected {
   border-color: var(--text-primary);
   transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.color-custom-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-input);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  transition: all 0.3s;
+  position: relative;
+  cursor: pointer;
+}
+
+.color-custom-picker:hover {
+  border-color: #3b82f6;
+}
+
+.color-custom-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  width: 100%;
+  pointer-events: none;
+}
+
+.color-preview {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 2px solid var(--border-color);
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+
+.color-custom-label:hover .color-preview {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.color-hex {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: 'Courier New', monospace;
+  transition: color 0.3s ease;
 }
 
 .color-input {
+  position: absolute;
   width: 100%;
-  height: 50px;
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
+  height: 100%;
+  opacity: 0;
   cursor: pointer;
+  top: 0;
+  left: 0;
 }
 
 .modal-actions {
@@ -173,4 +239,28 @@
   margin: 20px;
   text-align: center;
   border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.logo-upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.logo-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-input);
+}
+
+.logo-preview img {
+  max-width: 150px;
+  max-height: 150px;
+  object-fit: contain;
+  border-radius: 8px;
 }
